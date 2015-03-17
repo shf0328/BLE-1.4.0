@@ -262,14 +262,14 @@ card_init_fail:
 		}
 		
 		nfcUARTOpen();
-		NfcRelease();
-		int res = PN532InitAsInitiator();
+		Pn532PowerMode = LOWVBAT;
+		int res = NfcInit();
 		if(res == NFC_FAIL){
 			NfcRelease();
 			goto social_init_fail;
 		}
 		SocialToRcvInitInfo = 1;
-		osal_start_timerEx( NfcTask_TaskID, NFC_SOCIAL_RCV_EVT, 100 );
+		//osal_start_timerEx( NfcTask_TaskID, NFC_SOCIAL_RCV_EVT, 100 );
 social_init_fail:
 		return (events ^ NFC_SOCIAL_MODE_INIT_EVT);
 	}
@@ -328,6 +328,7 @@ social_init_fail:
 			//init success
 			osal_set_event(NfcTask_TaskID, NFC_SOCIAL_MODE_DE_EVT);
 			SocialToRcvInitInfo = 0;
+			Pn532PowerMode = STANDBY;
 		}
 		
 social_rcv_fail:

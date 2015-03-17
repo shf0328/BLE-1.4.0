@@ -30,6 +30,7 @@
 #define LOWVBAT 1
 #define POWERDOWN 2
 
+static unsigned char Pn532PowerMode = LOWVBAT;
 //---------------------------------------------------------------------------
 // Error Codes Definiions
 //
