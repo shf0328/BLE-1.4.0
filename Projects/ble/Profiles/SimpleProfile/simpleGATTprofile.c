@@ -19,8 +19,9 @@
 #include "gattservapp.h"
 #include "gapbondmgr.h"
 #include "hal_lcd.h"
-#include "simpleGATTprofile.h"
 #include "flash_operate.h"
+#include "simpleGATTprofile.h"
+
 /*********************************************************************
  * MACROS
  */
@@ -115,6 +116,9 @@ extern uint8 identity;
  * LOCAL VARIABLES
  */
 uint8 start = 0;
+uint8 ble_count=1;
+uint8 ble_state=1;
+uint8 app_notif=0;
 static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
 
 /*********************************************************************
@@ -782,6 +786,7 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
   {
     // 16-bit UUID
     uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
+    uint8 temp[10]={0};
     if(identity == 1)
     {
     	switch ( uuid )
@@ -821,19 +826,55 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
 	case SIMPLEPROFILE_CHAR_DATA1_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA1_LEN;
 		flash_Rinfo_short_read(pAttr->pValue, start );
-		start+=10;//这里不用溢出判断，flash_Rinfo_short_read函数里面有判断
-        VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
-		//读出数据包成功
+                //判断是否最后一个包读完
+                uint8 j=0;
+                while(j<9)
+                {
+                  if (pAttr->pValue[j]!=0) {break;}
+                  else {j++;}
+                }
+                //如果不是
+                if(j<9)
+                {
+                temp[0]=ble_state;
+                uint8 i;
+                for(i=1;i<=9;i++)
+                {
+                  temp[i]=pAttr->pValue[i-1];
+                }
+                VOID osal_memcpy( pValue, temp, SIMPLEPROFILE_CHAR_DATA1_LEN );
+                //读出数据包成功
+                //等待 
+                uint16 k;
+		for(k=0;k<1000;k++)
+                {
+                  //如果app_notif改变了，结束等待
+                  SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3,&app_notif);
+                  if(app_notif==ble_state+1) 
+                    {
+                      ble_state=app_notif;
+                      start+=9;//这里不用溢出判断，flash_Rinfo_short_read函数里面有判断
+                      break;
+                    }
+                }
+                //等待时间到，重发数据包
+                if(k==1000) { VOID osal_memcpy( pValue, temp, SIMPLEPROFILE_CHAR_DATA1_LEN );}
+                }
+                //如果是
+                else
+                {
 		notification = 5;
 		SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
+                ble_state=1;
+                }
         break; 
 
-/*	case SIMPLEPROFILE_CHAR_DATA2_UUID:
+/*        case SIMPLEPROFILE_CHAR_DATA2_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA2_LEN;
 		flash_Rinfo_short_read(pAttr->pValue, 10);
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_DATA2_LEN );
         break; 
-*/	  
+*/  
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
         *pLen = 0;
@@ -1019,13 +1060,30 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
         {
           VOID osal_memcpy( pAttr->pValue, pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
           notifyApp = SIMPLEPROFILE_CHAR_DATA1;
-          flash_Tinfo_short_write(pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+          if(pValue[0]==ble_count)
+          {
+            uint8 temp[9]={0};
+            uint8 i;
+            for(i=1;i<=9;i++)
+            {
+              temp[i-1]=pValue[i];
+            } 
+            flash_Tinfo_short_write(temp,9);
+            flash_Tinfo_Length_set(9*ble_count);
 	   //写入数据成功
 	   #if (defined HAL_LCD) && (HAL_LCD == TRUE)
       		HalLcdWriteString( "WriteInSuccessful",HAL_LCD_LINE_3);
          #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
-          notification = 3;
-	   SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
+              ble_count++;
+             notification=ble_count+10;
+             SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);   
+          }
+          else
+          {
+             notification=ble_count+10;
+             SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification); 
+          }
+         
         }
              
         break;

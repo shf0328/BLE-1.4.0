@@ -1249,7 +1249,7 @@ uint8 osal_self( void )
  * @fn      osal_changepowerstate
  * @brief   改变osal的省电模式
  */
-extern uint8 osal_changepowerstate( uint8 state)
+uint8 osal_changepowerstate( uint8 state)
 {
   return powercontrol=state;
 }
