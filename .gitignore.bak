@@ -46,7 +46,6 @@ Temporary Items
 /Components/ble
 /Components/hal
 /Components/services
-/Components/osal/mcu
 /Documents
 
 /Projects/ble/BloodPressure
