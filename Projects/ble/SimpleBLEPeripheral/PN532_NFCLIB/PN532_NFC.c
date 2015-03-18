@@ -34,7 +34,6 @@ void DelayMs(unsigned int delay);
 //---------------------------------------------------------------------------
 // Global Variables Definiions
 //
-unsigned char Pn532PowerMode = LOWVBAT;
 int NfcRole = -1;
 //---------------------------------------------------------------------------
 // level-3 functions
@@ -82,10 +81,10 @@ int NfcDataExchange(unsigned char* DataOut, int DataOutLen, unsigned char* DataI
 // output:	void
 void NfcRelease(void){
 	//switch to STANDBY mode
-	unsigned char pn532_wakeup_outLVbat_preamble[10] = {0x00, 0x00, 0xFF, 0x03, 0xFD, 0xD4, 0x14, 0x01, 0x17, 0x00};
-	UARTsend(pn532_wakeup_outLVbat_preamble, 10);
+	unsigned char pn532_wakeup_outLVbat_preamble[3] = {0xD4, 0x14, 0x01};
+	PN532sendFrame(pn532_wakeup_outLVbat_preamble, 3);
 	//TODO: short delay
-	DelayMs(10);
+	DelayMs(20);
 	//flush rx buf
 	UARTflushRxBuf();
 }
@@ -114,6 +113,7 @@ int PN532InitAsInitiator(void){
 		return NFC_FAIL;
 	}*/
 	
+	Pn532PowerMode = STANDBY;
 	//deal with junks
 	osal_mem_free(res);
 	return NFC_SUCCESS;
@@ -147,6 +147,7 @@ int PN532InitAsTarget(void){
 		return NFC_FAIL;
 	}*/
 	
+	Pn532PowerMode = POWERDOWN;
 	//deal with junks
 	osal_mem_free(res);
 	return NFC_SUCCESS;
@@ -365,11 +366,11 @@ void DelayMs(unsigned int ms){
 
 void UARTcallback(unsigned char port, unsigned int events){
 	//deal with uart 0
-	/*if(port == HAL_UART_PORT_0){
+	if(port == HAL_UART_PORT_0){
 		if(events & HAL_UART_RX_ABOUT_FULL){
 			osal_set_event(12, NFC_SOCIAL_RCV_EVT);
 		}
-	}*/
+	}
 }
 // end of level-4 functions
 //---------------------------------------------------------------------------
@@ -579,7 +580,7 @@ int PN532sendFrame(unsigned char* PData,unsigned int PDdataLEN){
 			}
 			//receiving ACK and SAM info frame
 			//short delay
-			DelayMs(10);
+			DelayMs(200);
 			//receive ACK frame
 			RetVal = PN532receiveFrame();
 			if(RetVal == (retVal*) NFC_FAIL){		//error handling
@@ -1537,7 +1538,7 @@ retVal* inJumpForPSL(unsigned char ActPass, unsigned char BR, unsigned char Next
 	return (retVal*) NFC_FAIL;
 }
 
-// inJumpForPSL() Status:unimplemented
+// inListPassiveTarget() Status: untested
 //	input:		MaxTg: 	max number of target to be init
 //				BrTy:	baud rate of communication used by card
 //				InitiatorData: the initiator data.
@@ -1618,7 +1619,7 @@ retVal* inDataExchange(unsigned char Tg, unsigned char* DataOut, unsigned int Da
 
 	//transmit data
 	retVal* OutParam = NULL;
-	OutParam = PN532transceive(PData, PDataLen, 200);
+	OutParam = PN532transceive(PData, PDataLen, 150);
 	if(OutParam == (retVal*) NFC_FAIL){	//transcevie error
 #ifdef LINUX
 		printf("TransceiveError\n");
@@ -1796,7 +1797,7 @@ retVal* tgGetData(void){
 	
 	//transmit data
 	retVal* OutParam = NULL;
-	OutParam = PN532transceive(PData, PDataLen, 100);
+	OutParam = PN532transceive(PData, PDataLen, 50);
 	if(OutParam == (retVal*) NFC_FAIL){	//transcevie error
 #ifdef LINUX
 		printf("TransceiveError\n");
@@ -1840,7 +1841,7 @@ retVal* tgSetData(unsigned char* DataOut, int DataOutLen){
 
 	//transmit data
 	retVal* OutParam = NULL;
-	OutParam = PN532transceive(PData, PDataLen, 50);
+	OutParam = PN532transceive(PData, PDataLen, 10);
 	if(OutParam == (retVal*) NFC_FAIL){	//transcevie error
 #ifdef LINUX
 		printf("TransceiveError\n");
