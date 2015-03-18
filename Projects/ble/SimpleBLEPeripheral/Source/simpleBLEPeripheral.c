@@ -348,15 +348,15 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
 	}*/
     
-    /*
+    
     osal_event_hdr_t *msgPtr;
     msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
     if ( msgPtr )
     {
-      msgPtr->event=SOCIAL;
+      msgPtr->event=READER;
       osal_msg_send( 12, (uint8 *)msgPtr );
-    }*/
-    osal_changepowerstate(0);
+    }
+    //osal_changepowerstate(0);
   }
   
   if ( keys & HAL_KEY_DOWN )

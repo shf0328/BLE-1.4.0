@@ -1538,7 +1538,7 @@ retVal* inJumpForPSL(unsigned char ActPass, unsigned char BR, unsigned char Next
 	return (retVal*) NFC_FAIL;
 }
 
-// inJumpForPSL() Status:unimplemented
+// inListPassiveTarget() Status: untested
 //	input:		MaxTg: 	max number of target to be init
 //				BrTy:	baud rate of communication used by card
 //				InitiatorData: the initiator data.

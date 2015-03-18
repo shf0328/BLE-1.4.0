@@ -199,9 +199,13 @@ uint16 NfcTask_ProcessEvent( uint8 task_id, uint16 events ){
 			case READER_MODE:
 				if( events & NFC_READER_MODE_INIT_EVT ){
 					//do nothing
-				}else if( events & NFC_READER_MODE_AUTH_EVT ){
+				}else if( events & NFC_READER_S50_AUTH_EVT ){
 					//do nothing
-				}else if( events & NFC_READER_MODE_READ_EVT ){
+				}else if( events & NFC_READER_S50_READ_EVT ){
+					//do nothing
+				}else if( events & NFC_READER_BJM_SEL_EVT ){
+					//do nothing
+				}else if( events & NFC_READER_BJM_GETB_EVT ){
 					//do nothing
 				}else{
 					//start the event to init pn532 as card
@@ -269,6 +273,7 @@ card_init_fail:
 			goto social_init_fail;
 		}
 		SocialToRcvInitInfo = 1;
+		osal_changepowerstate(0);
 		//osal_start_timerEx( NfcTask_TaskID, NFC_SOCIAL_RCV_EVT, 100 );
 social_init_fail:
 		return (events ^ NFC_SOCIAL_MODE_INIT_EVT);
@@ -332,6 +337,7 @@ social_init_fail:
 		}
 		
 social_rcv_fail:
+		osal_changepowerstate(1);
 		return (events ^ NFC_SOCIAL_RCV_EVT);
 	}
 	
@@ -389,15 +395,76 @@ social_de_end:
 		
 		//TODO: deal with card info
 		memcpy(SerialNum, &res->Rcv[6], 4);
+		HalLcdWriteStringValueValue("SEN_RES:", res->Rcv[2], 16, res->Rcv[3], 16, HAL_LCD_LINE_3);
+		if( (res->Rcv[2] == 0x00) && (res->Rcv[3] == 0x04) ){
+			//Mifare S50 card
+			osal_set_event(NfcTask_TaskID, NFC_READER_S50_AUTH_EVT);
+		}else{
+			//TODO: 判断条件
+			//Beijing Municipal
+			osal_set_event(NfcTask_TaskID, NFC_READER_BJM_SEL_EVT);
+		}
 		//deal with junks
 		osal_mem_free(res);
-		osal_set_event(NfcTask_TaskID, NFC_READER_MODE_AUTH_EVT);
+		
 reader_init_fail:
 		return (events ^ NFC_READER_MODE_INIT_EVT);
 	}
 	
+	//select app in beijing municipal card
+	if(events & NFC_READER_BJM_SEL_EVT){
+		unsigned char select[8] = {0x00, 0xA4, 0x00, 0x00, 0x02, 0x10, 0x01, 0x00};
+		retVal* res = inDataExchange(1, select, 8);
+		if(res == (retVal*) NFC_FAIL){
+			//low level error
+			NfcRelease();
+			goto reader_bjm_sel_fail;
+		}else if( (res->Rcv[0]&0x3F) != 0 ){
+			//app level error
+			NfcRelease();
+			goto reader_bjm_sel_fail;
+		}
+		
+		osal_set_event(NfcTask_TaskID, NFC_READER_BJM_GETB_EVT);
+		osal_mem_free(res);
+reader_bjm_sel_fail:
+		return (events ^ NFC_READER_BJM_SEL_EVT);
+	}
+	
+	//get balance from beijing municipal card
+	if(events & NFC_READER_BJM_GETB_EVT){
+		unsigned char getBalance[5] = {0x80, 0x5C, 0x00, 0x02, 0x04};
+		uint32 HexBalance = 0;
+		float balance = 0;
+		retVal* res = inDataExchange(1, getBalance, 5);
+		if(res == (retVal*) NFC_FAIL){
+			//low level error
+			NfcRelease();
+			goto reader_bjm_getb_fail;
+		}else if( (res->Rcv[0]&0x3F) != 0 ){
+			//app level error
+			NfcRelease();
+			goto reader_bjm_getb_fail;
+		}
+		
+		//deal with balance
+		int i = 0;
+		for(i = 0; i < 4; i++){
+			HexBalance = HexBalance << 8;
+			HexBalance |= res->Rcv[i+1];
+		}
+		balance = HexBalance/100.0;
+		HalLcdWriteStringValueValue("BALANCE:", (uint16)(HexBalance >> 16), 16, (uint16)HexBalance, 16, HAL_LCD_LINE_4);
+		//end of read beijing municipal process
+		next = CARD_MODE;
+		NfcRelease();
+		osal_mem_free(res);
+reader_bjm_getb_fail:
+		return (events ^ NFC_READER_BJM_GETB_EVT);
+	}
+	
 	//authenticate mifare card
-	if(events & NFC_READER_MODE_AUTH_EVT){
+	if(events & NFC_READER_S50_AUTH_EVT){
 		//Authentication
 		int DataOutLen = 18;
 		uint8* DataOut = osal_mem_alloc(DataOutLen);
@@ -409,22 +476,22 @@ reader_init_fail:
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
 			NfcRelease();
-			goto reader_auth_fail;
+			goto reader_s50_auth_fail;
 		}else if( (res->Rcv[0]&0x3F) != 0 ){
 			//app level error
 			NfcRelease();
-			goto reader_auth_fail;
+			goto reader_s50_auth_fail;
 		}
 		
-		osal_set_event(NfcTask_TaskID, NFC_READER_MODE_READ_EVT);
+		osal_set_event(NfcTask_TaskID, NFC_READER_S50_READ_EVT);
 		osal_mem_free(DataOut);
 		osal_mem_free(res);
-reader_auth_fail:
-		return (events ^ NFC_READER_MODE_AUTH_EVT);
+reader_s50_auth_fail:
+		return (events ^ NFC_READER_S50_AUTH_EVT);
 	}
 	
 	//read mifare card
-	if(events & NFC_READER_MODE_READ_EVT){
+	if(events & NFC_READER_S50_READ_EVT){
 		//TODO: reader mode data exchange using inDataExchange
 		
 		//Reading
@@ -436,10 +503,10 @@ reader_auth_fail:
 		retVal* res = inDataExchange(1, DataOut, DataOutLen);
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
-			goto reader_read_fail;
+			goto reader_s50_read_fail;
 		}else if( (res->Rcv[0]&0x3F) != 0 ){
 			//app level error
-			goto reader_read_fail;
+			goto reader_s50_read_fail;
 		}
 		//TODO: handle received data
 		
@@ -447,8 +514,8 @@ reader_auth_fail:
 		NfcRelease();
 		osal_mem_free(DataOut);
 		osal_mem_free(res);
-reader_read_fail:
-		return (events ^ NFC_READER_MODE_READ_EVT);
+reader_s50_read_fail:
+		return (events ^ NFC_READER_S50_READ_EVT);
 	}
 	
 	// Discard unknown events
