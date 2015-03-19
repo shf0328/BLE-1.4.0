@@ -316,6 +316,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   if ( keys & HAL_KEY_CENTER )
   {
     HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
+<<<<<<< HEAD
   
     /*
     osal_event_hdr_t *msgPtr;
