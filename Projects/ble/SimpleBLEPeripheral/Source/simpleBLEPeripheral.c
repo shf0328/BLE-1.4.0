@@ -319,14 +319,44 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 <<<<<<< HEAD
   
     /*
+=======
+    
+    /*    int res = NFC_FAIL;
+	int initCnt = 0;
+        //int temp=0;
+	do{
+		NfcRelease();
+		res = NfcInit();
+		initCnt++;
+	}while(res == NFC_FAIL);
+	
+	HalLcdWriteStringValue( "initCnt =", initCnt, 10, HAL_LCD_LINE_6 );
+	
+        uint8 send[50]={0};
+        uint8 rec[50]={0};
+        flash_Tinfo_all_read(send);
+        
+	res = NfcDataExchange(send, 50, rec);
+        
+        
+        
+	if(res==NFC_FAIL){
+		HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
+	}else{
+                flash_Rinfo_all_write(rec);
+		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
+	}*/
+    
+    
+>>>>>>> origin/master
     osal_event_hdr_t *msgPtr;
     msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
     if ( msgPtr )
     {
-      msgPtr->event=SOCIAL;
+      msgPtr->event=READER;
       osal_msg_send( 12, (uint8 *)msgPtr );
-    }*/
-    osal_changepowerstate(0);
+    }
+    //osal_changepowerstate(0);
   }
   
   if ( keys & HAL_KEY_DOWN )
