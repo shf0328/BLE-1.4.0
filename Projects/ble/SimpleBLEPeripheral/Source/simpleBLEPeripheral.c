@@ -306,11 +306,6 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 
   if ( keys & HAL_KEY_RIGHT )
   {
-    /*HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
-    uint8 temp[5]={0};
-    flash_Rinfo_short_read(temp, 8);
-    HalLcdWriteStringValue( "SAVE VALUE = ", temp[3], 10, HAL_LCD_LINE_6 );
-    */
     HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
     uint8 temp=0;
     temp=flash_Rinfo_single_read(seq);
@@ -321,33 +316,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   if ( keys & HAL_KEY_CENTER )
   {
     HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
-    
-    /*    int res = NFC_FAIL;
-	int initCnt = 0;
-        //int temp=0;
-	do{
-		NfcRelease();
-		res = NfcInit();
-		initCnt++;
-	}while(res == NFC_FAIL);
-	
-	HalLcdWriteStringValue( "initCnt =", initCnt, 10, HAL_LCD_LINE_6 );
-	
-        uint8 send[50]={0};
-        uint8 rec[50]={0};
-        flash_Tinfo_all_read(send);
-        
-	res = NfcDataExchange(send, 50, rec);
-        
-        
-        
-	if(res==NFC_FAIL){
-		HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
-	}else{
-                flash_Rinfo_all_write(rec);
-		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
-	}*/
-    
+  
     /*
     osal_event_hdr_t *msgPtr;
     msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
@@ -618,7 +587,7 @@ uint16 SimpleBLEPeripheral_ProcessEvent( uint8 task_id, uint16 events )
     }
 
     // Perform periodic application task
-    // performPeriodicTask();
+     performPeriodicTask();
 
     return (events ^ SBP_PERIODIC_EVT);
   }
@@ -807,22 +776,7 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
  */
 static void performPeriodicTask( void )
 {
-  uint8 valueToCopy;
-  uint8 stat;
-
-  // Call to retrieve the value of the third characteristic in the profile
-  stat = SimpleProfile_GetParameter( SIMPLEPROFILE_CHAR3, &valueToCopy);
-
-  if( stat == SUCCESS )
-  {
-    /*
-     * Call to set that value of the fourth characteristic in the profile. Note
-     * that if notifications of the fourth characteristic have been enabled by
-     * a GATT client device, then a notification will be sent every time this
-     * function is called.
-     */
-    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &valueToCopy);
-  }
+    
 }
 
 /*********************************************************************
