@@ -356,7 +356,7 @@ social_rcv_fail:
 			HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
 			goto social_de_fail;
 		}
-		flash_Rinfo_all_write(rec);
+		flash_Recinfo_Compare_Save(rec);
 		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
 social_de_fail:
 		NfcRelease();

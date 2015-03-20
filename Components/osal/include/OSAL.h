@@ -82,7 +82,10 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-
+#define SAVEPOWER 1
+#define NOSAVEPOWER 0
+  
+  
 /*** Interrupts ***/
 #define INTS_ALL    0xFF
 
@@ -301,6 +304,8 @@ typedef void * osal_msg_q_t;
   
   /*
    * change the powerstate
+   * state是0,代表忽略powersaving
+   * state是1,代表使用powersaving
    */
   extern uint8 osal_changepowerstate( uint8 state);
 /*********************************************************************
