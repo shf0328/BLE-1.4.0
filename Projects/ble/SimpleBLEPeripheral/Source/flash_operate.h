@@ -5,7 +5,31 @@
  */
 #include "hal_types.h"
 #include "osal_snv.h"
-#define INFO_LENGTH   50  
+  
+   
+/*********************************************************************
+ * CONSTANT
+ */
+#define INFO_LENGTH   250  
+
+#define ID_LENGTH   10
+#define EXIST   1  
+#define NOEXIST   0 
+#define RecInfo1      0x84
+#define RecInfo1len   0x85   
+
+#define RecInfo2      0x86
+#define RecInfo2len   0x87
+
+#define RecInfo3      0x88
+#define RecInfo3len   0x89
+
+#define RecInfo4      0x8A
+#define RecInfo4len   0x8B
+
+#define RecInfo5      0x8C   
+#define RecInfo5len   0x8D   
+   
    
 /*************************************
 * uint8 flash_pwd_init( void )
@@ -58,7 +82,7 @@ extern uint8 flash_info_init( void );
 
 /**************************************
 * uint8 flash_Rinfo_all_read(void *pBuf)
-* 在flash内部接收数据的全部读取
+* 在flash内部接收数据0x84的全部读取
 * 参数是一个长度INFO_LENGTH的数组地址
 * 返回值是osal flash操作的值，具体参见API文档
 * 一般使用成功是SUCCESS
@@ -84,13 +108,13 @@ extern uint8 flash_Tinfo_all_read(void *pBuf);
 
 
 /**************************************
-* uint8 flash_Rinfo_all_write(void *pBuf)
-* 在flash内部接收数据的全部写入
+* uint8 flash_Rinfo_all_write(void *pBuf, uint8 add)
+* 在flash内部接收数据的全部写入add位置
 * 参数是一个长度INFO_LENGTH的数组地址
 * 返回值是osal flash操作的值，具体参见API文档
 * 一般使用成功是SUCCESS
 **************************************/
-extern uint8 flash_Rinfo_all_write(void *pBuf);
+extern uint8 flash_Rinfo_all_write(void *pBuf, uint8 add);
 
 
 
@@ -109,14 +133,12 @@ extern uint8 flash_Tinfo_all_write(void *pBuf);
 
 
 /**************************************
-* uint8 flash_Rinfo_single_read( uint8 seq )
-* 读取flash内部接收数据的存储区域的第seq个位存入的数据
+* uint8 flash_Rinfo_single_read( uint8 seq, uint8 index )
+* 读取flash内部接收数据的存储区域的第seq组第index位存入的数据
 * 若seq未超过存储区域的长度，返回对应值
 * 若seq超过存储区域的长度，返回0xFF
 **************************************/
-extern uint8 flash_Rinfo_single_read(uint8 seq);
-
-
+extern uint8 flash_Rinfo_single_read(uint8 seq, uint8 index);
 
 
 
@@ -132,12 +154,12 @@ extern uint8 flash_Tinfo_single_read(uint8 seq);
 
 
 /**************************************
-* uint8 flash_Rinfo_single_write(uint8 seq, uint8 value)
-* 向flash内部接收数据的存储区域的第seq位存入数据value
+* uint8 flash_Rinfo_single_write(uint8 seq,uint8 index, uint8 value)
+* 向flash内部接收数据的存储区域的第seq块第index位存入数据value
 * 若seq未超过存储区域的长度，返回读写成功对应值
 * 若seq超过存储区域的长度，返回0xFF
 **************************************/
-extern uint8 flash_Rinfo_single_write(uint8 seq, uint8 value);
+extern uint8 flash_Rinfo_single_write(uint8 seq,uint8 index, uint8 value);
 
 
 
@@ -203,13 +225,16 @@ extern uint8 flash_Tinfo_short_read(void *pBuf, uint8 seq);
 
 
 /**************************************
-* uint8 flash_Rinfo_Length_init(void）
-* 在flash内部初始化发送数据的长度存储位
+* uint8 flash_Rinfo_Length_init(uint8 seq)
+* 在flash内部初始化发送数据第seq位的长度存储位
 **************************************/
-extern uint8 flash_Rinfo_Length_init(void);
+extern uint8 flash_Rinfo_Length_init(uint8 seq);
 
-
-
+/**************************************
+* uint8 flash_Rinfo_init(uint8 seq）
+* 在flash内部初始化接收数据存储
+**************************************/
+uint8 flash_Rinfo_init(uint8 seq);
 
 
 /**************************************
@@ -243,9 +268,31 @@ extern uint8 flash_Rinfo_short_write(void *pBuf, uint8 len);
 
 
 /**************************************
-* uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq)
-* 在flash内部接收数据区域的第seq处开始为第0位，向后（包括seq）读取长度5的数组
+* uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq, uint8 pages)
+* 在flash内部接收数据区域的第page页的第seq处开始为第0位，
+* 向后（包括seq）读取长度9的数组
 * 若超过存储长度，则在数组后补零
 * 赋值给pBuf处
 **************************************/
-extern uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq);
+extern uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq, uint8 pages);
+
+/**************************************
+* uint8 flash_Recinfo_getID(void *pBuf, uint8 add)
+* 获取收到的存储信息seq个部分的ID值
+**************************************/
+uint8 flash_Recinfo_getID(void *pBuf, uint8 add);
+
+
+/**************************************
+* uint8 flash_Recinfo_Compare_Save(void *pBuf)
+* 在已有5页flash接收区写入数据，若数组的ID已有或者存储已满
+* 则不存储，一个区域的ID全为0代表该区域可以存储
+**************************************/
+extern uint8 flash_Recinfo_Compare_Save(void *pBuf);
+
+
+/**************************************
+* uint8 flash_RinfoPageAddress(uint8 seq)
+* 获取收到的存储信息第seq页的地址
+**************************************/
+extern uint8 flash_RinfoPageAddress(uint8 seq);

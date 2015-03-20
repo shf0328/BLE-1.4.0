@@ -82,7 +82,10 @@ extern "C"
 /*********************************************************************
  * CONSTANTS
  */
-
+#define SAVEPOWER 1
+#define NOSAVEPOWER 0
+  
+  
 /*** Interrupts ***/
 #define INTS_ALL    0xFF
 

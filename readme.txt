@@ -1,3 +1,8 @@
+//3月20日更新
+在osal里面设置了省电和耗能模式的切换功能osal_changepowerstate
+请将下载的文件替换原有的osal.c和osal.h
+
+
 //3月17日更新
 预定义旗变为
 INT_HEAP_LEN=3072

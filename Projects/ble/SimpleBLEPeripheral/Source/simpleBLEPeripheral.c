@@ -119,9 +119,13 @@
 static uint8 simpleBLEPeripheral_TaskID;   // Task ID for internal task/event processing
 //按键回调函数里的"seq"
 uint8 s=0;
-//用于测试的一个结构体
-uint8 seq=0;
+
+uint8 index=0;
+uint8 seq=0x84;
 uint8 value=0;
+//用于测试的一个数组
+uint8 test[40]={0};
+
 extern uint8 next;
 
 /*********************************************************************
@@ -285,30 +289,32 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   if ( keys & HAL_KEY_UP )
   {  
     HalLcdWriteString( "HAL_KEY_UP", HAL_LCD_LINE_5 );
-    if(seq<INFO_LENGTH)
+    if(index<INFO_LENGTH)
     {
-      seq++;
+      index++;
     }
-    HalLcdWriteStringValue( "SEQ = ", seq, 10, HAL_LCD_LINE_6 );
-    osal_changepowerstate(1);
+    HalLcdWriteStringValue( "INDEX = ", index, 10, HAL_LCD_LINE_6 );
+    //osal_changepowerstate(SAVEPOWER);
     
   }
 
   if ( keys & HAL_KEY_LEFT )
   {
     HalLcdWriteString( "HAL_KEY_LEFT", HAL_LCD_LINE_5 );
-    uint8 temp=0;
-    temp=flash_Tinfo_single_read(seq);
+    /*uint8 temp=0;
+    temp=flash_Rinfo_single_write(seq,index,index);
     //HalLcdWriteStringValue( "send VALUE = ", send[seq], 10, HAL_LCD_LINE_6 );
-    HalLcdWriteStringValue( "T VALUE = ", temp, 10, HAL_LCD_LINE_7 );
+    HalLcdWriteStringValue( "W VALUE = ", temp, 10, HAL_LCD_LINE_7 );*/
+    test[1]=test[1]+1;
     
+    flash_Recinfo_Compare_Save(test);
   }
 
   if ( keys & HAL_KEY_RIGHT )
   {
     HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
     uint8 temp=0;
-    temp=flash_Rinfo_single_read(seq);
+    temp=flash_Rinfo_single_read(seq,index);
     //HalLcdWriteStringValue( "rcv VALUE = ", receive[seq], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "R VALUE = ", temp, 10, HAL_LCD_LINE_7 );
   }
@@ -316,80 +322,28 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   if ( keys & HAL_KEY_CENTER )
   {
     HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
-<<<<<<< HEAD
-  
-    /*
-=======
-    
-    /*    int res = NFC_FAIL;
-	int initCnt = 0;
-        //int temp=0;
-	do{
-		NfcRelease();
-		res = NfcInit();
-		initCnt++;
-	}while(res == NFC_FAIL);
-	
-	HalLcdWriteStringValue( "initCnt =", initCnt, 10, HAL_LCD_LINE_6 );
-	
-        uint8 send[50]={0};
-        uint8 rec[50]={0};
-        flash_Tinfo_all_read(send);
-        
-	res = NfcDataExchange(send, 50, rec);
-        
-        
-        
-	if(res==NFC_FAIL){
-		HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
-	}else{
-                flash_Rinfo_all_write(rec);
-		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
-	}*/
-    
-    
->>>>>>> origin/master
-    osal_event_hdr_t *msgPtr;
-    msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
-    if ( msgPtr )
+    seq=seq+2;
+    if(seq>0x8C)
     {
-      msgPtr->event=READER;
-      osal_msg_send( 12, (uint8 *)msgPtr );
+      seq=0x84;
     }
+    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );
     //osal_changepowerstate(0);
+    
+
+    
+    
   }
   
   if ( keys & HAL_KEY_DOWN )
   {
-    /*HalLcdWriteString( "HAL_KEY_DOWN", HAL_LCD_LINE_5 );
-    if(value<INFO_LENGTH)
+    if(index>0)
     {
-      value++;
+      index--;
     }
-    HalLcdWriteStringValue( "VALUE = ", value, 10, HAL_LCD_LINE_6 );
-    uint8 *p1=osal_mem_alloc(SIMPLEPROFILE_CHAR_DATA1_LEN);
-    flash_Tinfo_short_read(p1,s);
-    if(i==10)
-    {
-    	s+=10;
-	flash_Tinfo_short_read(p1,s);
-        i=0;
-    }
-      #if (defined HAL_LCD) && (HAL_LCD == TRUE)
-        HalLcdWriteStringValue( "82 package:", (uint16)p1[i], 10,  HAL_LCD_LINE_3 );
-      #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
-	  i++;
-    */
+    HalLcdWriteStringValue( "INDEX = ", index, 10, HAL_LCD_LINE_6 );
     
-    
-    
-    if(seq>0)
-    {
-      seq--;
-    }
-    HalLcdWriteStringValue( "SEQ = ", seq, 10, HAL_LCD_LINE_6 );
-    
-    HalLedBlink (HAL_LED_1, 5, 50, 2000);
+    //HalLedBlink (HAL_LED_1, 5, 50, 2000);
   }
 }
 

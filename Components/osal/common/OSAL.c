@@ -1135,7 +1135,7 @@ void osal_run_system( void )
 #if defined( POWER_SAVING )
   else  // Complete pass through all task events with no activity?
   {
-    if(powercontrol==1)
+    if(powercontrol==SAVEPOWER)
     {
       osal_pwrmgr_powerconserve();  // Put the processor/system into sleep
     }

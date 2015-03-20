@@ -825,7 +825,7 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
 
 	case SIMPLEPROFILE_CHAR_DATA1_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA1_LEN;
-		flash_Rinfo_short_read(pAttr->pValue, start );
+		flash_Rinfo_short_read(pAttr->pValue, start, 0 );
                 //判断是否最后一个包读完
                 uint8 j=0;
                 while(j<9)
