@@ -11,7 +11,7 @@
  * CONSTANT
  */
 #define INFO_LENGTH   250  
-
+#define SERIAL_LENGTH   3  
 #define ID_LENGTH   10
 #define EXIST   1  
 #define NOEXIST   0 
@@ -296,3 +296,22 @@ extern uint8 flash_Recinfo_Compare_Save(void *pBuf);
 * 获取收到的存储信息第seq页的地址
 **************************************/
 extern uint8 flash_RinfoPageAddress(uint8 seq);
+
+/**************************************
+* uint8 flash_serialNumberInit(void);
+* 序列号的初始化
+**************************************/
+uint8 flash_serialNumberInit(void);
+
+/**************************************
+* uint8 flash_generateSerialNumber(void *pBuf);
+* 产生一串3位序列号，数组地址开始位pBuf
+**************************************/
+extern uint8 flash_generateSerialNumber(void *pBuf);
+
+
+/**************************************
+* uint8 flash_getSerialNumber(void *pBuf);
+* 获取产生的3位序列号，赋值给数组地址pBuf
+**************************************/
+extern uint8 flash_getSerialNumber(void *pBuf);

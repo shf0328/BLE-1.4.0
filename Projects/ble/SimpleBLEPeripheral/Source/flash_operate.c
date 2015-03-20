@@ -92,6 +92,10 @@ uint8 flash_info_init( void )
     //初始化发送信息的长度
     flash_Tinfo_Length_init();
     
+
+    //初始化序列号存储地址
+    flash_serialNumberInit();
+    
     //初始化接收信息
     flash_Rinfo_init(RecInfo1);
     flash_Rinfo_Length_init(RecInfo1len);
@@ -593,4 +597,55 @@ uint8 flash_RinfoPageAddress(uint8 seq)
     return 0x84+2*seq;
   }
   return 0x84;
+}
+
+/**************************************
+* uint8 flash_serialNumberInit(void);
+* 序列号的初始化
+**************************************/
+uint8 flash_serialNumberInit()
+{
+    uint8 serial[3]={0};
+    //地址0x8E是序列号
+    int8 ret8 = osal_snv_read(0x8E, SERIAL_LENGTH, serial);
+    // 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
+    if(NV_OPER_FAILED == ret8)
+    {
+        // 把数据结构保存到flash
+        flash_generateSerialNumber(serial);
+        osal_snv_write(0x8E, SERIAL_LENGTH, serial); 
+        osal_snv_read(0x8E, SERIAL_LENGTH, serial);
+    }
+    return SUCCESS;
+}
+
+
+/**************************************
+* uint8 flash_generateSerialNumber(void *pBuf);
+* 产生一串3位序列号，数组地址开始位pBuf
+**************************************/
+uint8 flash_generateSerialNumber(void *pBuf)
+{
+  uint8 serial[SERIAL_LENGTH]={0};
+  uint16 fulserial[SERIAL_LENGTH]={0};
+  fulserial[0]=osal_rand();
+  serial[0]=LO_UINT16(fulserial[0]);
+  fulserial[1]=osal_rand();
+  serial[1]=LO_UINT16(fulserial[1]);
+  fulserial[2]=osal_rand();
+  serial[2]=LO_UINT16(fulserial[2]);
+  for(int i=0;i<SERIAL_LENGTH;i++)
+  {
+    ((uint8 *)pBuf)[i]=serial[i];
+  }
+  return 0;
+}
+
+/**************************************
+* uint8 flash_getSerialNumber(void *pBuf);
+* 获取产生的3位序列号，赋值给数组地址pBuf
+**************************************/
+uint8 flash_getSerialNumber(void *pBuf)
+{
+  return osal_snv_read(0x8E, SERIAL_LENGTH, pBuf);
 }

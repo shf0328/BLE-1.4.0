@@ -124,7 +124,7 @@ uint8 index=0;
 uint8 seq=0x84;
 uint8 value=0;
 //用于测试的一个数组
-uint8 test[40]={0};
+//uint8 test[40]={0};
 
 extern uint8 next;
 
@@ -300,14 +300,18 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 
   if ( keys & HAL_KEY_LEFT )
   {
-    HalLcdWriteString( "HAL_KEY_LEFT", HAL_LCD_LINE_5 );
+    //HalLcdWriteString( "HAL_KEY_LEFT", HAL_LCD_LINE_5 );
     /*uint8 temp=0;
     temp=flash_Rinfo_single_write(seq,index,index);
     //HalLcdWriteStringValue( "send VALUE = ", send[seq], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "W VALUE = ", temp, 10, HAL_LCD_LINE_7 );*/
-    test[1]=test[1]+1;
-    
-    flash_Recinfo_Compare_Save(test);
+    //test[1]=test[1]+1;
+    //flash_Recinfo_Compare_Save(test);
+    uint8 temp[3]={0};
+    flash_getSerialNumber(temp);
+    HalLcdWriteStringValue( "1 VALUE = ", temp[0], 10, HAL_LCD_LINE_6 );
+    HalLcdWriteStringValue( "2 VALUE = ", temp[1], 10, HAL_LCD_LINE_7 );
+    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );
   }
 
   if ( keys & HAL_KEY_RIGHT )
