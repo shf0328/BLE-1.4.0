@@ -78,7 +78,9 @@ uint8 flash_pwd_delete(void)
 **************************************/
 uint8 flash_info_init( void )
 {
-    uint8 T_info[INFO_LENGTH] ={0};
+    uint16* T_info;
+    T_info= (uint16 *)osal_mem_alloc(250);
+    osal_memset(T_info,0,250);
     //地址0x82是发送出去的信息
     int8 ret8 = osal_snv_read(0x82, INFO_LENGTH, T_info);
     // 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
@@ -91,10 +93,13 @@ uint8 flash_info_init( void )
     }
     //初始化发送信息的长度
     flash_Tinfo_Length_init();
-    
+    osal_mem_free(T_info);
 
     //初始化序列号存储地址
     flash_serialNumberInit();
+    
+    //初始化余额存储
+    flash_cashInit();
     
     //初始化接收信息
     flash_Rinfo_init(RecInfo1);
@@ -307,10 +312,10 @@ uint8 flash_Tinfo_short_write(void *pBuf, uint8 len)
         length=flash_Tinfo_Length_get();
         
         //分配一个长度为INFO_LENGTH的数组
-        uint16* inMem;
-        inMem= (uint16 *)osal_mem_alloc(INFO_LENGTH);
-        osal_memset(inMem,0,INFO_LENGTH);
-        //uint8 inMem[INFO_LENGTH]={0};
+        //uint16* inMem;
+        //inMem= (uint16 *)osal_mem_alloc(INFO_LENGTH);
+        //osal_memset(inMem,0,INFO_LENGTH);
+        uint8 inMem[INFO_LENGTH]={0};
         
         osal_snv_read(0x82, INFO_LENGTH, inMem);
         uint8 i=0;
@@ -336,7 +341,7 @@ uint8 flash_Tinfo_short_write(void *pBuf, uint8 len)
         
         //释放内存
         osal_snv_write(0x82, INFO_LENGTH, inMem);
-        osal_mem_free(inMem);
+        //osal_mem_free(inMem);
         return 0;
 }
 
@@ -605,16 +610,16 @@ uint8 flash_RinfoPageAddress(uint8 seq)
 **************************************/
 uint8 flash_serialNumberInit()
 {
-    uint8 serial[3]={0};
+    uint8 serial[SERIAL_LENGTH]={0};
     //地址0x8E是序列号
-    int8 ret8 = osal_snv_read(0x8E, SERIAL_LENGTH, serial);
+    int8 ret8 = osal_snv_read(SERIAL_ADDRESS, SERIAL_LENGTH, serial);
     // 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
     if(NV_OPER_FAILED == ret8)
     {
         // 把数据结构保存到flash
         flash_generateSerialNumber(serial);
-        osal_snv_write(0x8E, SERIAL_LENGTH, serial); 
-        osal_snv_read(0x8E, SERIAL_LENGTH, serial);
+        osal_snv_write(SERIAL_ADDRESS, SERIAL_LENGTH, serial); 
+        osal_snv_read(SERIAL_ADDRESS, SERIAL_LENGTH, serial);
     }
     return SUCCESS;
 }
@@ -628,12 +633,12 @@ uint8 flash_generateSerialNumber(void *pBuf)
 {
   uint8 serial[SERIAL_LENGTH]={0};
   uint16 fulserial[SERIAL_LENGTH]={0};
-  fulserial[0]=osal_rand();
-  serial[0]=LO_UINT16(fulserial[0]);
-  fulserial[1]=osal_rand();
-  serial[1]=LO_UINT16(fulserial[1]);
-  fulserial[2]=osal_rand();
-  serial[2]=LO_UINT16(fulserial[2]);
+  
+  for(int i=0;i<SERIAL_LENGTH;i++)
+  {
+    fulserial[i]=osal_rand();
+    serial[i]=LO_UINT16(fulserial[i]);
+  }
   for(int i=0;i<SERIAL_LENGTH;i++)
   {
     ((uint8 *)pBuf)[i]=serial[i];
@@ -647,5 +652,50 @@ uint8 flash_generateSerialNumber(void *pBuf)
 **************************************/
 uint8 flash_getSerialNumber(void *pBuf)
 {
-  return osal_snv_read(0x8E, SERIAL_LENGTH, pBuf);
+  return osal_snv_read(SERIAL_ADDRESS, SERIAL_LENGTH, pBuf);
+}
+
+
+/**************************************
+* uint8 flash_cashInit(void);
+* 余额的初始化
+**************************************/
+uint8 flash_cashInit()
+{
+    uint8 cash[CASH_LENGTH]={0};
+    //地址0x8E是序列号
+    int8 ret8 = osal_snv_read(CASH_ADDRESS, CASH_LENGTH, cash);
+    // 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
+    if(NV_OPER_FAILED == ret8)
+    {
+        // 把数据结构保存到flash
+        flash_generateSerialNumber(cash);
+        osal_snv_write(CASH_ADDRESS, CASH_LENGTH, cash); 
+        osal_snv_read(CASH_ADDRESS, CASH_LENGTH, cash);
+    }
+    return SUCCESS;
+}
+
+/**************************************
+* uint8 flash_save_cash(void *pBuf);
+* 存储余额
+**************************************/
+uint8 flash_save_cash(void *pBuf)
+{
+    return osal_snv_write(CASH_ADDRESS, CASH_LENGTH, pBuf);
+}
+
+/**************************************
+* uint8 flash_get_cash(void *pBuf);
+* 获取余额，放到一个pBuf的数组里面
+**************************************/
+uint8 flash_get_cash(void *pBuf)
+{
+    uint8 cash[CASH_LENGTH]={0};
+    osal_snv_read(CASH_ADDRESS, CASH_LENGTH, cash);
+    for(int i=0;i<CASH_LENGTH;i++)
+    {
+      ((uint8 *)pBuf)[i]=cash[i];
+    }
+    return SUCCESS;
 }

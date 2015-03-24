@@ -11,10 +11,20 @@
  * CONSTANT
  */
 #define INFO_LENGTH   250  
+
 #define SERIAL_LENGTH   3  
-#define ID_LENGTH   10
+#define SERIAL_ADDRESS 0x8E   
+
+#define CASH_ADDRESS    0x90
+#define CASH_LENGTH    4
+
+   
+#define ID_LENGTH   16
 #define EXIST   1  
 #define NOEXIST   0 
+
+
+
 #define RecInfo1      0x84
 #define RecInfo1len   0x85   
 
@@ -315,3 +325,22 @@ extern uint8 flash_generateSerialNumber(void *pBuf);
 * 获取产生的3位序列号，赋值给数组地址pBuf
 **************************************/
 extern uint8 flash_getSerialNumber(void *pBuf);
+
+
+/**************************************
+* uint8 flash_cashInit(void);
+* 余额的初始化
+**************************************/
+uint8 flash_cashInit();
+
+/**************************************
+* uint8 flash_save_cash(void *pBuf);
+* 存储余额
+**************************************/
+extern uint8 flash_save_cash(void *pBuf);
+
+/**************************************
+* uint8 flash_get_cash(void *pBuf);
+* 获取余额，放到一个pBuf的数组里面
+**************************************/
+extern uint8 flash_get_cash(void *pBuf);

@@ -307,33 +307,39 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     HalLcdWriteStringValue( "W VALUE = ", temp, 10, HAL_LCD_LINE_7 );*/
     //test[1]=test[1]+1;
     //flash_Recinfo_Compare_Save(test);
-    uint8 temp[3]={0};
+    /*uint8 temp[3]={0};
     flash_getSerialNumber(temp);
     HalLcdWriteStringValue( "1 VALUE = ", temp[0], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "2 VALUE = ", temp[1], 10, HAL_LCD_LINE_7 );
-    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );
+    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );*/
+    uint8 temp=0;
+    temp=flash_Tinfo_single_write(index,index);
   }
 
   if ( keys & HAL_KEY_RIGHT )
   {
     HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
     uint8 temp=0;
-    temp=flash_Rinfo_single_read(seq,index);
+    temp=flash_Tinfo_single_read(index);
     //HalLcdWriteStringValue( "rcv VALUE = ", receive[seq], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "R VALUE = ", temp, 10, HAL_LCD_LINE_7 );
   }
   
   if ( keys & HAL_KEY_CENTER )
   {
-    HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
+    /*HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
     seq=seq+2;
     if(seq>0x8C)
     {
       seq=0x84;
     }
-    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );
+    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );*/
     //osal_changepowerstate(0);
-    
+    uint8 temp[3]={0};
+    flash_getSerialNumber(temp);
+    HalLcdWriteStringValue( "1 VALUE = ", temp[0], 10, HAL_LCD_LINE_6 );
+    HalLcdWriteStringValue( "2 VALUE = ", temp[1], 10, HAL_LCD_LINE_7 );
+    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );
 
     
     
