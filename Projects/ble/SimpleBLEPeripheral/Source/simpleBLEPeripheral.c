@@ -283,9 +283,12 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 
   //HalLcdWriteStringValue( "key = 0x", keys, 16, HAL_LCD_LINE_3 );
   
+  if(keys& HAL_KEY_SW_6)
+  {
+    HalLedBlink (HAL_LED_1, 5, 50, 2000);
+  }
   
-  
-  
+  /*
   if ( keys & HAL_KEY_UP )
   {  
     HalLcdWriteString( "HAL_KEY_UP", HAL_LCD_LINE_5 );
@@ -311,7 +314,8 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     flash_getSerialNumber(temp);
     HalLcdWriteStringValue( "1 VALUE = ", temp[0], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "2 VALUE = ", temp[1], 10, HAL_LCD_LINE_7 );
-    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );*/
+    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );
+    //
     uint8 temp=0;
     temp=flash_Tinfo_single_write(index,index);
   }
@@ -333,7 +337,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     {
       seq=0x84;
     }
-    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );*/
+    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );
     //osal_changepowerstate(0);
     uint8 temp[3]={0};
     flash_getSerialNumber(temp);
@@ -354,7 +358,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     HalLcdWriteStringValue( "INDEX = ", index, 10, HAL_LCD_LINE_6 );
     
     //HalLedBlink (HAL_LED_1, 5, 50, 2000);
-  }
+  }*/
 }
 
 

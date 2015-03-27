@@ -112,6 +112,8 @@ uint8 flash_info_init( void )
     flash_Rinfo_Length_init(RecInfo4len);
     flash_Rinfo_init(RecInfo5);
     flash_Rinfo_Length_init(RecInfo5len);
+    //初始化页数
+    flash_RINFO_pagesInit();
     return SUCCESS;
 }
 
@@ -571,6 +573,7 @@ uint8 flash_Recinfo_Compare_Save(void *pBuf)
   if((state==NOEXIST)&&(availableSEQ!=-1))
   {
     flash_Rinfo_all_write(pBuf, flash_RinfoPageAddress(availableSEQ));
+    flash_RINFO_addpages();
   }
   return 0;
 }
@@ -669,7 +672,6 @@ uint8 flash_cashInit()
     if(NV_OPER_FAILED == ret8)
     {
         // 把数据结构保存到flash
-        flash_generateSerialNumber(cash);
         osal_snv_write(CASH_ADDRESS, CASH_LENGTH, cash); 
         osal_snv_read(CASH_ADDRESS, CASH_LENGTH, cash);
     }
@@ -699,3 +701,64 @@ uint8 flash_get_cash(void *pBuf)
     }
     return SUCCESS;
 }
+
+
+/**************************************
+* uint8 flash_RINFO_pagesInit(void);
+* 初始化存储页数
+**************************************/
+uint8 flash_RINFO_pagesInit()
+{
+    uint8 pages=0;
+    //地址0x8E是序列号
+    int8 ret8 = osal_snv_read(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages);
+    // 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
+    if(NV_OPER_FAILED == ret8)
+    {
+        // 把数据结构保存到flash
+        osal_snv_write(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages); 
+        osal_snv_read(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages);
+    }
+    return SUCCESS;
+}
+
+/**************************************
+* uint8 flash_RINFO_addpages(void);
+*增加存储页数，增加到MAXPAGES后停止
+**************************************/
+uint8 flash_RINFO_addpages()
+{
+    uint8 pages=0;
+    osal_snv_read(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages);
+    if((pages>=0)&&(pages<MAXPAGES))
+    {
+      pages=pages+1;
+    }
+    osal_snv_write(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages); 
+    return SUCCESS;
+}
+
+/**************************************
+* uint8 flash_RINFO_getpages(void);
+* 获取存储页数
+**************************************/
+uint8 flash_RINFO_getpages()
+{
+    uint8 pages=0;
+    osal_snv_read(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages);
+    return pages;
+}
+
+
+
+/**************************************
+* uint8 flash_RINFO_setpages(uint8 pages);
+* 设置存储页数
+**************************************/
+uint8 flash_RINFO_setpages(uint8 pages)
+{
+    osal_snv_write(INFO_PAGES_ADDR, INFO_PAGES_LEN, &pages); 
+    return pages;
+}
+
+

@@ -12,12 +12,16 @@
  */
 #define INFO_LENGTH   250  
 
+   
+#define MAXPAGES   5     
 #define SERIAL_LENGTH   3  
 #define SERIAL_ADDRESS 0x8E   
 
 #define CASH_ADDRESS    0x90
 #define CASH_LENGTH    4
 
+#define INFO_PAGES_ADDR    0x91
+#define INFO_PAGES_LEN    1
    
 #define ID_LENGTH   16
 #define EXIST   1  
@@ -344,3 +348,31 @@ extern uint8 flash_save_cash(void *pBuf);
 * 获取余额，放到一个pBuf的数组里面
 **************************************/
 extern uint8 flash_get_cash(void *pBuf);
+
+
+
+/**************************************
+* uint8 flash_RINFO_pagesInit(void);
+* 初始化存储页数
+**************************************/
+uint8 flash_RINFO_pagesInit();
+
+
+/**************************************
+* uint8 flash_RINFO_addpages(void);
+*增加存储页数，增加到MAXPAGES后停止
+**************************************/
+extern uint8 flash_RINFO_addpages();
+
+
+/**************************************
+* uint8 flash_RINFO_getpages(void);
+* 获取存储页数
+**************************************/
+extern uint8 flash_RINFO_getpages();
+
+/**************************************
+* uint8 flash_RINFO_setpages(uint8 pages);
+* 设置存储页数
+**************************************/
+extern uint8 flash_RINFO_setpages(uint8 pages);
