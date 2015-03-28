@@ -813,7 +813,7 @@ static void simpleProfileChangeCB( uint8 paramID )
 	else if (newValue ==2)
 	{
 	
-	  flash_Rinfo_Length_set(0);
+	  //flash_Rinfo_Length_set(0);
 	  start = 0;
 	//准备好读出
 	#if (defined HAL_LCD) && (HAL_LCD == TRUE)
