@@ -190,8 +190,8 @@ uint8 flash_pwd_delete(void)
 **************************************/
 uint8 flash_Tinfo_init(void)
 {
-	uint16* T_info;
-	T_info = (uint16 *)osal_mem_alloc(250);
+	uint8* T_info;
+	T_info = (uint8 *)osal_mem_alloc(250);
 	osal_memset(T_info, 0, 250);
 
 	int8 ret8 = osal_snv_read(TINFO_ADDRESS, INFO_LENGTH, T_info);
@@ -232,10 +232,10 @@ uint8 flash_Tinfo_short_write(void *pBuf, uint8 len)
 	length = flash_Tinfo_Length_get();
 
 	//分配一个长度为INFO_LENGTH的数组
-	//uint16* inMem;
-	//inMem= (uint16 *)osal_mem_alloc(INFO_LENGTH);
-	//osal_memset(inMem,0,INFO_LENGTH);
-	uint8 inMem[INFO_LENGTH] = { 0 };
+	uint8* inMem;
+	inMem= (uint8 *)osal_mem_alloc(INFO_LENGTH);
+	osal_memset(inMem,0,INFO_LENGTH);
+	//uint8 inMem[INFO_LENGTH] = { 0 };
 
 	osal_snv_read(TINFO_ADDRESS, INFO_LENGTH, inMem);
 	uint8 i = 0;
@@ -255,14 +255,14 @@ uint8 flash_Tinfo_short_write(void *pBuf, uint8 len)
 	{
 		length = INFO_LENGTH;
 	}
-#if (defined HAL_LCD) && (HAL_LCD == TRUE)
+/*#if (defined HAL_LCD) && (HAL_LCD == TRUE)
 	HalLcdWriteStringValue("LVALUE = ", length, 10, HAL_LCD_LINE_6);
-#endif
+#endif */
 	flash_Tinfo_Length_set(length);
 
 	//释放内存
 	osal_snv_write(TINFO_ADDRESS, INFO_LENGTH, inMem);
-	//osal_mem_free(inMem);
+	osal_mem_free(inMem);
 	return 0;
 }
 
@@ -356,6 +356,38 @@ uint8 flash_Tinfo_Length_get(void)
 
 
 //RINFO*******************************************************************
+
+/**************************************
+* uint8 flash_Rinfo_page_clear(uint8 page)
+*让flash内部的接受区域第page页清零
+**************************************/
+uint8 flash_Rinfo_page_clear(uint8 page)
+{
+    uint8* temp;
+    temp = (uint8 *)osal_mem_alloc(INFO_LENGTH);
+    osal_memset(temp, 0, INFO_LENGTH);
+    flash_Rinfo_all_write(temp, RINFO_ADDRESS1 + page);
+    osal_mem_free(temp);
+    return SUCCESS;
+}
+
+
+/**************************************
+* uint8 flash_Rinfo_all_clear(void)
+*让flash内部的接受区域全部清零
+**************************************/
+uint8 flash_Rinfo_all_clear(void)
+{
+   uint8 i=0;
+   for (i=0;i<=4;i++)
+   {
+     flash_Rinfo_page_clear(i);
+   }
+   return SUCCESS;
+}
+
+
+
 /**************************************
 * uint8 flash_RinfoPageAddress(uint8 num)
 * 获取收到的存储信息第num页的地址
@@ -375,8 +407,8 @@ uint8 flash_RinfoPageAddress(uint8 num)
 **************************************/
 uint8 flash_Rinfo_init(uint8 Addr)
 {
-	uint16* temp;
-	temp = (uint16 *)osal_mem_alloc(250);
+	uint8* temp;
+	temp = (uint8 *)osal_mem_alloc(250);
 	osal_memset(temp, 0, 250);
 	int8 ret8 = osal_snv_read(Addr, INFO_LENGTH, temp);
 	// 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
@@ -402,6 +434,19 @@ uint8 flash_Rinfo_ALLinit(void)
 	}
         return SUCCESS;
 }
+
+/**************************************
+* uint8 flash_Rinfo_all_read(void *pBuf, uint8 pages)
+* 在flash内部接收数据的读取全部数据
+* 参数是一个长度INFO_LENGTH的数组地址
+* 返回值是osal flash操作的值，具体参见API文档
+* 一般使用成功是SUCCESS
+**************************************/
+uint8 flash_Rinfo_all_read(void *pBuf, uint8 pages)
+{
+   return osal_snv_read(flash_RinfoPageAddress(pages),INFO_LENGTH,pBuf);
+}
+
 
 ////////NFC*******************************************************************
 /**************************************
@@ -486,8 +531,8 @@ uint8 flash_Recinfo_getID(void *pBuf, uint8 addr)
 uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq, uint8 pageID)
 {
 	//分配一个长度为INFO_LENGTH的数组
-	uint16* inMem;
-	inMem = (uint16 *)osal_mem_alloc(INFO_LENGTH);
+	uint8* inMem;
+	inMem = (uint8 *)osal_mem_alloc(INFO_LENGTH);
 	osal_memset(inMem, 0, INFO_LENGTH);
 
 	osal_snv_read(flash_RinfoPageAddress(pageID), INFO_LENGTH, inMem);
@@ -531,15 +576,22 @@ uint8 flash_Rinfo_short_read(void *pBuf, uint8 seq, uint8 pageID)
 **************************************/
 uint8 flash_Rinfo_single_read(uint8 Addr, uint8 index)
 {
-	uint8 temp[INFO_LENGTH] = { 0 };
+	//uint8 temp[INFO_LENGTH] = { 0 };
+       uint8* temp;
+	temp = (uint8 *)osal_mem_alloc(INFO_LENGTH);
+	osal_memset(temp, 0, INFO_LENGTH);
 	osal_snv_read(Addr, INFO_LENGTH, temp);
 	if (index<INFO_LENGTH)
 	{
-		return temp[index];
+            uint8 k=0;
+	    k=temp[index];
+            osal_mem_free(temp); 
+            return k;
 	}
 	else{
-		return 0xFF;
-	}
+	    osal_mem_free(temp); 	
+            return 0xFF;
+	} 
 }
 
 /**************************************
@@ -579,6 +631,7 @@ uint8 flash_Rinfo_pages_init(void)
 	if (NV_OPER_FAILED == ret8)
 	{
 		// 把数据结构保存到flash
+                temp=0;
 		osal_snv_write(R_PAGES_ADDRESS, 1, &temp);
 		osal_snv_read(R_PAGES_ADDRESS, 1, &temp);
 	}

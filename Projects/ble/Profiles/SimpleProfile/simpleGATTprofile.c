@@ -21,6 +21,7 @@
 #include "hal_lcd.h"
 #include "flash_operate.h"
 #include "simpleGATTprofile.h"
+//#include "FlashOperate.h"
 
 /*********************************************************************
  * MACROS
@@ -108,6 +109,7 @@ CONST uint8 simpleProfileData2UUID[ATT_BT_UUID_SIZE] =
  * EXTERNAL VARIABLES
  */
 extern uint8 identity;
+extern uint8 p1;
 /*********************************************************************
  * EXTERNAL FUNCTIONS
  */
@@ -119,6 +121,11 @@ uint8 start = 0;
 uint8 ble_count=1;
 uint8 ble_state=1;
 uint8 app_notif=0;
+uint8 p=0;  //当前页码
+uint8 flag=10;
+uint8 leng=0;  //当前读的页的数据长度      
+uint8 j=0;    //当前读的页的数据包数
+uint8 re=0;
 static simpleProfileCBs_t *simpleProfile_AppCBs = NULL;
 
 /*********************************************************************
@@ -786,8 +793,24 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
   {
     // 16-bit UUID
     uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
-    uint8 temp[10]={0};
-    if(identity == 1)
+/*    uint8 leng=0;  //当前读的页的数据长度      
+    uint8 j=0;    //当前读的页的数据包数
+    uint8 re=0;*/
+    if(p!=flag) //p为当前页
+    {
+    re=flash_Rinfo_single_read(0x94+p,1);
+    if(re!=0)
+    {
+      leng=re;
+ //     HalLcdWriteStringValue( "3 VALUE = ", leng, 10, HAL_LCD_LINE_8 );
+    }
+    if(leng%9!=0)
+    {j=(leng/9)+1;}
+    else {j=leng/9;}
+    flag=p;
+    }
+    
+     if(identity == 1)
     {
     	switch ( uuid )
     	{
@@ -800,12 +823,17 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
       //   can be sent as a notification, it is included here
       
       	case SIMPLEPROFILE_CHAR1_UUID:
-      	case SIMPLEPROFILE_CHAR2_UUID:  	
       	case SIMPLEPROFILE_CHAR4_UUID:
         *pLen = 1;
         pValue[0] = *pAttr->pValue;
         break;
+   
+        case SIMPLEPROFILE_CHAR2_UUID: 
+        *pLen = 1;
+         pValue[0] = leng;
 
+        break;
+          
       	case SIMPLEPROFILE_CHAR5_UUID:
         *pLen = SIMPLEPROFILE_CHAR5_LEN;
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR5_LEN );
@@ -825,53 +853,124 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
 
 	case SIMPLEPROFILE_CHAR_DATA1_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA1_LEN;
-		flash_Rinfo_short_read(pAttr->pValue, start, 0 );
-                //判断是否最后一个包读完
-                uint8 j=0;
-                while(j<9)
+         SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3,&app_notif);  
+         //如果不是最后一页
+         if(p>0)
+         {
+         //若APP通知位与包头一样
+         if(app_notif==ble_state)
+         {
+		flash_Rinfo_short_read(pAttr->pValue, start, p );
+                //判断是否最后一个包
+                //如果不是最后一个包
+                if(ble_state<j)
                 {
-                  if (pAttr->pValue[j]!=0) {break;}
-                  else {j++;}
-                }
-                //如果不是
-                if(j<9)
-                {
-                temp[0]=ble_state;
                 uint8 i;
-                for(i=1;i<=9;i++)
+                for(i=10;i>0;i--)
                 {
-                  temp[i]=pAttr->pValue[i-1];
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
                 }
-                VOID osal_memcpy( pValue, temp, SIMPLEPROFILE_CHAR_DATA1_LEN );
+                pAttr->pValue[0]=ble_state;       
+                VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+                    
                 //读出数据包成功
-                //等待 
-                uint16 k;
-		for(k=0;k<1000;k++)
-                {
-                  //如果app_notif改变了，结束等待
-                  SimpleProfile_GetParameter(SIMPLEPROFILE_CHAR3,&app_notif);
-                  if(app_notif==ble_state+1) 
-                    {
-                      ble_state=app_notif;
-                      start+=9;//这里不用溢出判断，flash_Rinfo_short_read函数里面有判断
-                      break;
-                    }
+                ble_state++;
+                start+=9;
                 }
-                //等待时间到，重发数据包
-                if(k==1000) { VOID osal_memcpy( pValue, temp, SIMPLEPROFILE_CHAR_DATA1_LEN );}
-                }
-                //如果是
-                else
+                
+                //如果是最后一个包
+                else if(ble_state==j)
+                {                      
+                 uint8 i;       
+                  for(i=10;i>0;i--)
                 {
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
+                }
+                pAttr->pValue[0]=ble_state;             
+                VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+
+                //该页读完
 		notification = 5;
 		SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
-                ble_state=1;
                 }
+         }
+         //若APP通知位与包头不一样，则重发数据包
+         else if(app_notif==ble_state-1)
+         {
+           flash_Rinfo_short_read(pAttr->pValue, start-9, p ); 
+           uint8 i;
+           for(i=10;i>0;i--)
+                {
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
+                }
+           pAttr->pValue[0]=ble_state-1;      
+           VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+         }
+         }
+         //如果是最后一页
+         else if(p==0)
+         {
+          //若APP通知位与包头一样
+         if(app_notif==ble_state)
+         {           
+		flash_Rinfo_short_read(pAttr->pValue, start, p );
+                //判断是否最后一个包
+                //如果不是最后一个包
+                if(ble_state<j)
+                {
+                uint8 i;
+                 for(i=10;i>0;i--)
+                {
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
+                }
+                pAttr->pValue[0]=ble_state;
+
+                 VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+
+       /* #if (defined HAL_LCD) && (HAL_LCD == TRUE)
+          HalLcdWriteString( "CCCCCCC",  HAL_LCD_LINE_4 );
+        #endif // (defined HAL_LCD) && (HAL_LCD == TRUE) */
+                //读出数据包成功
+                ble_state++;
+                start+=9;              
+                }
+                //如果是最后一个包
+                else if(ble_state==j)
+                {              
+                 uint8 i;
+                  for(i=10;i>0;i--)
+                {
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
+                }
+                pAttr->pValue[0]=ble_state;
+                 VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );               
+                 //最后一页读成功
+		notification = 6;
+		SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
+     /*            #if (defined HAL_LCD) && (HAL_LCD == TRUE)
+                 HalLcdWriteString( "TEST_TEST",  HAL_LCD_LINE_6 );
+                 #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)*/
+                }
+         }
+         //若APP通知位与包头不一样，则重发数据包
+         else if(app_notif==ble_state-1)
+         {
+           flash_Rinfo_short_read(pAttr->pValue, start-9, p ); 
+           uint8 i;
+            for(i=10;i>0;i--)
+                {
+                  pAttr->pValue[i]=pAttr->pValue[i-1];
+                }
+                pAttr->pValue[0]=ble_state-1;
+          VOID osal_memcpy( pValue,pAttr->pValue, SIMPLEPROFILE_CHAR_DATA1_LEN );
+         }
+         }
+         
         break; 
 
 /*        case SIMPLEPROFILE_CHAR_DATA2_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA2_LEN;
-		flash_Rinfo_short_read(pAttr->pValue, 10);
+		 flash_get_cash(pAttr->pValue);
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_DATA2_LEN );
         break; 
 */  
@@ -904,7 +1003,10 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
     *pLen = 0;
     status = ATT_ERR_INVALID_HANDLE;
   }
-
+ /*   #if (defined HAL_LCD) && (HAL_LCD == TRUE)
+         HalLcdWriteString( "TEST_TEST",  HAL_LCD_LINE_3 );
+        #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)*/
+  
   return ( status );
 }
 
@@ -970,7 +1072,28 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
           }
           else
           {
-            notifyApp = SIMPLEPROFILE_CHAR3;           
+            notifyApp = SIMPLEPROFILE_CHAR3;       
+            if(pAttr->pValue[0]==50)
+            {
+              #if (defined HAL_LCD) && (HAL_LCD == TRUE)
+         HalLcdWriteString( "TEST_TEST",  HAL_LCD_LINE_4 );
+        #endif // (defined HAL_LCD) && (HAL_LCD == TRUE) 
+              if(p>0)
+              {   
+             // flash_Rinfo_page_clear(p);
+             // flash_Rinfo_minus_pages();
+              p--;
+              ble_state=1;
+              start=0;
+              }
+              else if(p==0)
+              {
+              // flash_Rinfo_page_clear(p);
+              // flash_Rinfo_minus_pages();
+                flash_Rinfo_all_clear();
+                
+              }             
+            }    
           }
         }
              
@@ -1062,18 +1185,19 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
           notifyApp = SIMPLEPROFILE_CHAR_DATA1;
           if(pValue[0]==ble_count)
           {
-            uint8 temp[9]={0};
             uint8 i;
             for(i=1;i<=9;i++)
             {
-              temp[i-1]=pValue[i];
+              pValue[i-1]=pValue[i];
             } 
-            flash_Tinfo_short_write(temp,9);
-            flash_Tinfo_Length_set(9*ble_count);
+            flash_Tinfo_short_write(pValue,9);
+           
+            
+          //  flash_Tinfo_Length_set(9*ble_count);
 	   //写入数据成功
-	   #if (defined HAL_LCD) && (HAL_LCD == TRUE)
+	/*   #if (defined HAL_LCD) && (HAL_LCD == TRUE)
       		HalLcdWriteString( "WriteInSuccessful",HAL_LCD_LINE_3);
-         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
+         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)*/
               ble_count++;
              notification=ble_count+10;
              SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);   
@@ -1127,7 +1251,8 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
         status = ATT_ERR_ATTR_NOT_FOUND;
         break;
       }
-      }else if (identity==0){
+      }
+    else if (identity==0){
       switch(uuid)
       	{
 	case SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_UUID:
