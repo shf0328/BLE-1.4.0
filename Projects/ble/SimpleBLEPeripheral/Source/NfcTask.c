@@ -446,6 +446,7 @@ reader_bjm_sel_fail:
 		}else if( (res->Rcv[0]&0x3F) != 0 ){
 			//app level error
 			NfcRelease();
+                        osal_mem_free(res);
 			goto reader_bjm_getb_fail;
 		}
 		
@@ -455,7 +456,7 @@ reader_bjm_sel_fail:
 			HexBalance = HexBalance << 8;
 			HexBalance |= res->Rcv[i+1];
 		}
-		balance = HexBalance/100.0;
+                flash_save_cash(&(res->Rcv[1]));
 		HalLcdWriteStringValueValue("BALANCE:", (uint16)(HexBalance >> 16), 16, (uint16)HexBalance, 16, HAL_LCD_LINE_4);
 		//end of read beijing municipal process
 		next = CARD_MODE;

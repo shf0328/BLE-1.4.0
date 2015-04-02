@@ -26,6 +26,7 @@
 #include "Osal_Nv.h"
 #include "hci.h"
 #include "flash_operate.h"
+#include "led_operate.h"
 //#include "FlashOperate.h"
 
 #include "gapgattserver.h"
@@ -251,6 +252,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys );
 static char *bdAddr2Str ( uint8 *pAddr );
 #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
 
+//static void simpleBLEPeripheral_HandleLED( uint8 condition);
 
 
 /*********************************************************************
@@ -384,7 +386,9 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     }
     HalLcdWriteStringValue( "INDEX = ", index, 10, HAL_LCD_LINE_6 );
     
-    //HalLedBlink (HAL_LED_1, 5, 50, 2000);
+    led_start_social();
+    led_info_rec();
+    led_notif(2);
   }
 }
 
@@ -690,7 +694,13 @@ static void simpleBLEPeripheral_ProcessOSALMsg( osal_event_hdr_t *pMsg )
     case KEY_CHANGE:
       simpleBLEPeripheral_HandleKeys( ((keyChange_t *)pMsg)->state, ((keyChange_t *)pMsg)->keys );
       break;
-
+    
+    case CASH_READOVER:
+      //通知APP;
+      notification=7;
+      SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
+      break;
+    
   default:
     // do nothing
     break;
@@ -974,6 +984,24 @@ char *bdAddr2Str( uint8 *pAddr )
 }
 #endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
 
-
+/*********************************************************************
+ * @fn      simpleBLEPeripheral_HandleLED
+ * 根据不同的condition调整LED
+ 
+static void simpleBLEPeripheral_HandleLED( uint8 condition )
+{
+  if(condition==SOCIAL_MODE_ACTIVE)
+  {
+    HalLedBlink (HAL_LED_1, 5, 50, 2000);
+  }
+  if(condition==INFO_REC)
+  {
+    HalLedBlink (HAL_LED_2, 1, 50, 1000);
+  }
+  if((condition>=NOTIFMIN)&&(condition<=NOTIFMAX))
+  {
+    HalLedBlink (HAL_LED_3, 10, 50, condition*100);
+  }
+}*/
 /*********************************************************************
 *********************************************************************/

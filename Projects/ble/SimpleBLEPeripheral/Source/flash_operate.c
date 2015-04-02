@@ -125,7 +125,156 @@ uint8 flash_get_cash(void *pBuf)
 }
 //结束余额********************************************************************
 
+//认证********************************************************************
+/**************************************
+* uint8 flash_certifInit(void);
+* 认证的初始化
+**************************************/
+uint8 flash_certifInit()
+{
+	uint8* certif;
+	certif = (uint8 *)osal_mem_alloc(CERTIF_LENGTH);
+	osal_memset(certif, 0, CERTIF_LENGTH);
+	int8 ret8 = osal_snv_read(CERTIF_ADDRESS, CERTIF_LENGTH, certif);
+	// 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
+	if (NV_OPER_FAILED == ret8)
+	{
+		// 把数据结构保存到flash
+		osal_snv_write(CERTIF_ADDRESS, CERTIF_LENGTH, certif);
+		osal_snv_read(CERTIF_ADDRESS, CERTIF_LENGTH, certif);
+	}
+	osal_mem_free(certif);
+	return SUCCESS;
+}
 
+/**************************************
+* uint8 flash_certif_short_write(void *pBuf, uint8 len)
+* 在flash内部认证数据区域的接收数据的长度为s
+* 则向s后面写入长度为len的数组，地址是pBuf
+* 若超过存储长度的数据不写
+**************************************/
+uint8 flash_certif_short_write(void *pBuf, uint8 len)
+{
+	uint8 length = 0;
+	length = flash_certif_Length_get();
+
+	//分配一个长度为CERTIF_LENGTH的数组
+	uint8* inMem;
+	inMem = (uint8 *)osal_mem_alloc(CERTIF_LENGTH);
+	osal_memset(inMem, 0, CERTIF_LENGTH);
+	
+	osal_snv_read(CERTIF_ADDRESS, CERTIF_LENGTH, inMem);
+	uint8 i = 0;
+	for (i = 0; i<len; i++)
+	{
+		if ((length + i)<CERTIF_LENGTH)
+		{
+			inMem[length + i] = ((uint8 *)pBuf)[i];
+		}
+		else
+		{
+			break;
+		}
+	}
+	length = length + len;
+	if (length>CERTIF_LENGTH)
+	{
+		length = CERTIF_LENGTH;
+	}
+	
+	flash_certif_Length_set(length);
+
+	//释放内存
+	osal_snv_write(CERTIF_ADDRESS, CERTIF_LENGTH, inMem);
+	osal_mem_free(inMem);
+	return 0;
+}
+
+/**************************************
+* uint8 flash_certif_short_read(void *pBuf, uint8 seq)
+* 在flash内部认证数据区域的第seq处开始为第0位，
+* 向后（包括seq）读取长度9的数组
+* 若超过存储长度，则在数组后补零
+* 赋值给pBuf处
+**************************************/
+uint8 flash_certif_short_read(void *pBuf, uint8 seq)
+{
+	//分配一个长度为CERTIF_LENGTH的数组
+	uint8* inMem;
+	inMem = (uint8 *)osal_mem_alloc(CERTIF_LENGTH);
+	osal_memset(inMem, 0, CERTIF_LENGTH);
+
+	osal_snv_read(CERTIF_ADDRESS, CERTIF_LENGTH, inMem);
+
+	uint8 temp[9] = { 0 };
+
+
+	uint8 i = 0;
+	for (i = 0; i<9; i++)
+	{
+		if ((seq + i)<CERTIF_LENGTH)
+		{
+			temp[i] = inMem[seq + i];
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	for (i = 0; i<9; i++)
+	{
+		((uint8 *)pBuf)[i] = temp[i];
+	}
+
+	//释放内存
+	osal_mem_free(inMem);
+	return 0;
+}
+//结束认证********************************************************************
+
+//认证长度********************************************************************
+/**************************************
+* uint8 flash_certif_len_Init(void);
+* 认证长度的初始化
+**************************************/
+uint8 flash_certif_len_Init(void)
+{
+	uint8 temp = 0;
+	//地址TINFO_LEN_ADDRESS是发送数据的长度的存储区域
+	int8 ret8 = osal_snv_read(CERTIF_LEN_ADDRESS, 1, &temp);
+	// 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
+	if (NV_OPER_FAILED == ret8)
+	{
+		// 把数据结构保存到flash
+		osal_snv_write(CERTIF_LEN_ADDRESS, 1, &temp);
+		osal_snv_read(CERTIF_LEN_ADDRESS, 1, &temp);
+	}
+	return SUCCESS;
+}
+
+/**************************************
+* uint8 flash_certif_Length_set(uint8 length)
+* 在flash内部写入认证数据的长度存储位
+**************************************/
+uint8 flash_certif_Length_set(uint8 length)
+{
+	uint8 temp = 0;
+	temp = length;
+	return osal_snv_write(CERTIF_LEN_ADDRESS, 1, &temp);
+}
+
+/**************************************
+* uint8 flash_certif_Length_get(void)
+* 在flash内部读取发送数据的长度存储位
+**************************************/
+uint8 flash_certif_Length_get(void)
+{
+	uint8 temp = 1;
+	osal_snv_read(CERTIF_LEN_ADDRESS, 1, &temp);
+	return temp;
+}
+//结束认证长度********************************************************************
 
 
 //密码************************************************************************
@@ -191,8 +340,8 @@ uint8 flash_pwd_delete(void)
 uint8 flash_Tinfo_init(void)
 {
 	uint8* T_info;
-	T_info = (uint8 *)osal_mem_alloc(250);
-	osal_memset(T_info, 0, 250);
+	T_info = (uint8 *)osal_mem_alloc(INFO_LENGTH);
+	osal_memset(T_info, 0, INFO_LENGTH);
 
 	int8 ret8 = osal_snv_read(TINFO_ADDRESS, INFO_LENGTH, T_info);
 	// 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
@@ -408,8 +557,8 @@ uint8 flash_RinfoPageAddress(uint8 num)
 uint8 flash_Rinfo_init(uint8 Addr)
 {
 	uint8* temp;
-	temp = (uint8 *)osal_mem_alloc(250);
-	osal_memset(temp, 0, 250);
+	temp = (uint8 *)osal_mem_alloc(INFO_LENGTH);
+	osal_memset(temp, 0, INFO_LENGTH);
 	int8 ret8 = osal_snv_read(Addr, INFO_LENGTH, temp);
 	// 如果该段内存未曾写入过数据， 直接读，会返回 NV_OPER_FAILED 
 	if (NV_OPER_FAILED == ret8)

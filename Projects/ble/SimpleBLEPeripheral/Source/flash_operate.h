@@ -15,6 +15,16 @@
 #define CASH_LENGTH			4
 
 
+#define CERTIF_ADDRESS		0x82
+#define CERTIF_LENGTH		50	
+
+#define CERTIF_LEN_ADDRESS		0x83
+#define CERTIF_LEN_LENGTH		1
+
+
+
+
+//social mode
 #define PASSWORD_ADDRESS	0x90  
 
 #define INFO_LENGTH			150
@@ -90,7 +100,52 @@ extern uint8 flash_save_cash(void *pBuf);
 extern uint8 flash_get_cash(void *pBuf);
 //结束余额********************************************************************
 
+//认证长度********************************************************************
+/**************************************
+* uint8 flash_certif_len_Init(void);
+* 认证长度的初始化
+**************************************/
+uint8 flash_certif_len_Init();
 
+/**************************************
+* uint8 flash_certif_Length_set(uint8 length)
+* 在flash内部写入认证数据的长度存储位
+**************************************/
+extern uint8 flash_certif_Length_set(uint8 length);
+
+/**************************************
+* uint8 flash_certif_Length_get(void)
+* 在flash内部读取发送数据的长度存储位
+**************************************/
+extern uint8 flash_certif_Length_get(void);
+//结束认证长度********************************************************************
+
+
+
+//认证********************************************************************
+/**************************************
+* uint8 flash_certifInit(void);
+* 认证的初始化
+**************************************/
+uint8 flash_certifInit();
+
+/**************************************
+* uint8 flash_certif_short_write(void *pBuf, uint8 len)
+* 在flash内部认证数据区域的接收数据的长度为s
+* 则向s后面写入长度为len的数组，地址是pBuf
+* 若超过存储长度的数据不写
+**************************************/
+extern uint8 flash_certif_short_write(void *pBuf, uint8 len);
+
+/**************************************
+* uint8 flash_certif_short_read(void *pBuf, uint8 seq)
+* 在flash内部认证数据区域的第seq处开始为第0位，
+* 向后（包括seq）读取长度9的数组
+* 若超过存储长度，则在数组后补零
+* 赋值给pBuf处
+**************************************/
+extern uint8 flash_certif_short_read(void *pBuf, uint8 seq);
+//结束认证********************************************************************
 
 
 
