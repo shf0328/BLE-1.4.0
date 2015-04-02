@@ -344,7 +344,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
   {
     HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
     uint8 temp=0;
-    temp=flash_Rinfo_single_read(0x95,index);
+    temp=flash_Rinfo_single_read(0x94,index);
     //HalLcdWriteStringValue( "rcv VALUE = ", receive[seq], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "R VALUE = ", temp, 10, HAL_LCD_LINE_7 );
   }

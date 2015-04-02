@@ -17,7 +17,7 @@
 
 #define PASSWORD_ADDRESS	0x90  
 
-#define INFO_LENGTH			250
+#define INFO_LENGTH			150
 
 #define TINFO_ADDRESS		0x91
 #define TINFO_LEN_ADDRESS	0x92

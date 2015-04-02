@@ -351,13 +351,14 @@ social_rcv_fail:
 			
 		uint8 send[150]={0};
 		uint8 rec[150]={0};
-		//flash_Tinfo_all_read(send);
+                flash_Tinfo_all_read(send);
+                //send[10]=1;
 		int res = NfcDataExchange(send, 150, rec);
 		if(res == NFC_FAIL){
 			HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
 			goto social_de_fail;
 		}
-		//flash_Recinfo_Compare_Save(rec);
+		flash_Recinfo_Compare_Save(rec);
 		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
 social_de_fail:
 		NfcRelease();
