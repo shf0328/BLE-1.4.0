@@ -193,6 +193,18 @@ extern uint8 flash_Tinfo_Length_get(void);
 
 //RINFO*******************************************************************
 /**************************************
+* uint8 flash_Rinfo_page_clear(uint8 page)
+*让flash内部的接受区域第page页清零
+**************************************/
+extern uint8 flash_Rinfo_page_clear(uint8 page);
+
+/**************************************
+* uint8 flash_Rinfo_all_clear(void)
+*让flash内部的接受区域全部清零
+**************************************/
+extern uint8 flash_Rinfo_all_clear(void);
+
+/**************************************
 * uint8 flash_RinfoPageAddress(uint8 num)
 * 获取收到的存储信息第seq页的地址
 **************************************/
@@ -221,6 +233,11 @@ extern uint8 flash_Rinfo_ALLinit(void);
 * 一般使用成功是SUCCESS
 **************************************/
 extern uint8 flash_Rinfo_all_write(void *pBuf, uint8 addr);
+
+/**************************************
+* uint8 flash_Rinfo_all_write(void *pBuf, uint8 addr)
+**************************************/
+extern uint8 flash_Rinfo_all_read(void *pBuf, uint8 pages);
 
 /**************************************
 * uint8 flash_Recinfo_getID(void *pBuf, uint8 addr)

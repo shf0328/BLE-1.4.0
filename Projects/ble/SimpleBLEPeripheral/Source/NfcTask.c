@@ -55,7 +55,7 @@
  */
 
 
-#define NFC_PERIODIC_EVT_PERIOD 1000
+#define NFC_PERIODIC_EVT_PERIOD 500
 #define SOCIAL_INIT_MAX_TRY_COUNT 200
  /*********************************************************************
  * TYPEDEFS
@@ -266,7 +266,7 @@ card_init_fail:
 		}
 		
 		nfcUARTOpen();
-		Pn532PowerMode = LOWVBAT;
+		NfcRelease();
 		int res = NfcInit();
 		if(res == NFC_FAIL){
 			NfcRelease();
@@ -334,6 +334,7 @@ social_init_fail:
 			osal_set_event(NfcTask_TaskID, NFC_SOCIAL_MODE_DE_EVT);
 			SocialToRcvInitInfo = 0;
 			Pn532PowerMode = STANDBY;
+			osal_mem_free(Receive);
 		}
 		
 social_rcv_fail:
@@ -348,15 +349,15 @@ social_rcv_fail:
 			goto social_de_end;
 		}
 			
-		uint8 send[50]={0};
-		uint8 rec[50]={0};
-		flash_Tinfo_all_read(send);
-		int res = NfcDataExchange(send, 50, rec);
+		uint8 send[150]={0};
+		uint8 rec[150]={0};
+		//flash_Tinfo_all_read(send);
+		int res = NfcDataExchange(send, 150, rec);
 		if(res == NFC_FAIL){
 			HalLcdWriteString( "FAIL", HAL_LCD_LINE_5 );
 			goto social_de_fail;
 		}
-		flash_Recinfo_Compare_Save(rec);
+		//flash_Recinfo_Compare_Save(rec);
 		HalLcdWriteString( "SUCCESS", HAL_LCD_LINE_5 );
 social_de_fail:
 		NfcRelease();
@@ -414,7 +415,7 @@ reader_init_fail:
 	//select app in beijing municipal card
 	if(events & NFC_READER_BJM_SEL_EVT){
 		unsigned char select[8] = {0x00, 0xA4, 0x00, 0x00, 0x02, 0x10, 0x01, 0x00};
-		retVal* res = inDataExchange(1, select, 8);
+		retVal* res = inDataExchange(1, select, 8, 20);
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
 			NfcRelease();
@@ -436,7 +437,7 @@ reader_bjm_sel_fail:
 		unsigned char getBalance[5] = {0x80, 0x5C, 0x00, 0x02, 0x04};
 		uint32 HexBalance = 0;
 		float balance = 0;
-		retVal* res = inDataExchange(1, getBalance, 5);
+		retVal* res = inDataExchange(1, getBalance, 5, 20);
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
 			NfcRelease();
@@ -472,7 +473,7 @@ reader_bjm_getb_fail:
 		//TODO: set address and key
 		
 		memcpy(&DataOut[8], SerialNum, 4);
-		retVal* res = inDataExchange(1, DataOut, DataOutLen);
+		retVal* res = inDataExchange(1, DataOut, DataOutLen, 30);
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
 			NfcRelease();
@@ -500,7 +501,7 @@ reader_s50_auth_fail:
 		DataOut[0] = 0x30;	//16-bytes reading
 		//TODO: set address
 		
-		retVal* res = inDataExchange(1, DataOut, DataOutLen);
+		retVal* res = inDataExchange(1, DataOut, DataOutLen, 10);
 		if(res == (retVal*) NFC_FAIL){
 			//low level error
 			goto reader_s50_read_fail;

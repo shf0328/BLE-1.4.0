@@ -123,7 +123,7 @@ extern retVal* inJumpForPSL(unsigned char ActPass, unsigned char BR, unsigned ch
 extern retVal* inListPassiveTarget(unsigned char MaxTg, unsigned char BrTy, unsigned char* InitiatorData, int InitiatorDataLen);
 extern int inATR(unsigned char Tg, unsigned char Next, unsigned char* NFCID3i, unsigned char* Gi);
 extern int inPSL(unsigned char Tg, unsigned char BRit, unsigned char BRti);
-extern retVal* inDataExchange(unsigned char Tg, unsigned char* DataOut, unsigned int DataOutLen);
+extern retVal* inDataExchange(unsigned char Tg, unsigned char* DataOut, unsigned int DataOutLen, int timeout);
 extern int inCommunicateThru(unsigned char* DataOut);
 extern int inDeselect(unsigned char Tg);
 extern retVal* inRelease(unsigned char Tg);
@@ -135,8 +135,8 @@ extern int inAutoPoll(unsigned char PollNr, unsigned char Period, unsigned char*
 //
 extern retVal* tgInitAsTarget(unsigned char Mode, unsigned char* MifareParams, unsigned char* FeliCaParams, unsigned char* NFCID3t, unsigned char LENGt, unsigned char* Gt, unsigned char LENTk, unsigned char* Tk, int WithInfo);
 extern int tgSetGeneralBytes(unsigned char* Gt);
-extern retVal* tgGetData();
-extern retVal* tgSetData(unsigned char* DataOut, int DataOutLen);
+extern retVal* tgGetData(int timeout);
+extern retVal* tgSetData(unsigned char* DataOut, int DataOutLen, int timeout);
 extern retVal* tgSetMetaData(unsigned char* DataOut, int DataOutLen);
 extern retVal* tgGetInitiatorCommand(void);
 extern retVal* tgResponseToInitiator(unsigned char* TgResponse, int TgResponseLen);
