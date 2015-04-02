@@ -35,10 +35,10 @@
 #define RINFO_ADDRESS5		0x98
 
 
-    
+
 #define EXIST		1
 #define NOEXIST		0
-  
+
 
 
 #define INFO_PAGES_ADDR    0x91

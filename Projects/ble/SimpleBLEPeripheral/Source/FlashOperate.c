@@ -17,7 +17,7 @@
 #include "hal_led.h"
 #include "hal_key.h"
 #include "hal_lcd.h"
-#include "flash_operate.h"
+#include "FlashOperate.h"
 
 
 /*********************************************************************
@@ -205,7 +205,7 @@ uint8 flash_Tinfo_init(void)
 	}
 	//初始化发送信息的长度
 	osal_mem_free(T_info);
-        return SUCCESS;
+	return SUCCESS;
 }
 
 /**************************************
@@ -400,7 +400,7 @@ uint8 flash_Rinfo_ALLinit(void)
 	{
 		flash_Rinfo_init(flash_RinfoPageAddress(i));
 	}
-        return SUCCESS;
+	return SUCCESS;
 }
 
 ////////NFC*******************************************************************
@@ -642,5 +642,5 @@ uint8 flash_info_init(void)
 	flash_Tinfo_Length_init();
 	flash_Rinfo_pages_init();
 	flash_Rinfo_ALLinit();
-        return SUCCESS;
+	return SUCCESS;
 }
