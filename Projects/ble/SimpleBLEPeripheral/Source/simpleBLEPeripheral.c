@@ -550,8 +550,8 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
 	flash_pwd_read(charValue6);
    
     uint8 PwdInDevice[SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_LEN] ={ 1,1,1,1,1,1,1,1};
-    uint8 charData1[SIMPLEPROFILE_CHAR_DATA1_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 8};
-    uint8 charData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 9};
+    uint8 charData1[SIMPLEPROFILE_CHAR_DATA1_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    uint8 charData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0};
 
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR1, sizeof ( uint8 ), &charValue1 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR2, sizeof ( uint8 ), &charValue2 );
@@ -934,6 +934,17 @@ static void simpleProfileChangeCB( uint8 paramID )
 	notification=3;
 	SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
 	}
+		 else if(newValue ==4)
+        {
+          //×¼±¸¶ÁÓà¶î
+          osal_event_hdr_t *msgPtr;
+          msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
+          if ( msgPtr )
+           {
+               msgPtr->event=READER;
+               osal_msg_send( 12, (uint8 *)msgPtr );
+           }      
+        }
       break;
 
     case SIMPLEPROFILE_CHAR3:
