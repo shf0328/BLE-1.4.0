@@ -40,7 +40,7 @@
 #include "gapbondmgr.h"
 
 #include "NfcTask.h"
-
+#include "simpleBLEPeripheral.h"
 #if defined FEATURE_OAD
   #include "oad.h"
   #include "oad_target.h"
@@ -457,6 +457,13 @@ reader_bjm_sel_fail:
 			HexBalance |= res->Rcv[i+1];
 		}
                 flash_save_cash(&(res->Rcv[1]));
+                osal_event_hdr_t *msgPtr;
+                msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
+                if ( msgPtr )
+                {
+                    msgPtr->event=CASH_READOVER;
+                    osal_msg_send( 11, (uint8 *)msgPtr );
+                }
 		HalLcdWriteStringValueValue("BALANCE:", (uint16)(HexBalance >> 16), 16, (uint16)HexBalance, 16, HAL_LCD_LINE_4);
 		//end of read beijing municipal process
 		next = CARD_MODE;

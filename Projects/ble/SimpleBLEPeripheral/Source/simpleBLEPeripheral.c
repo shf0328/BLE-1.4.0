@@ -388,7 +388,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     
     led_start_social();
     led_info_rec();
-    led_notif(2);
+    led_notif(3);
   }
 }
 
