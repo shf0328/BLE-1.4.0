@@ -225,7 +225,7 @@ static uint8 simpleProfileData1UserDesp[17] = "Characteristic 8\0";
 static uint8 simpleProfileData2Props = GATT_PROP_READ | GATT_PROP_WRITE;
 
 // Characteristic 9 Value
-static uint8 simpleProfileData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+static uint8 simpleProfileData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0};
 
 // Simple Profile Characteristic 9 User Description
 static uint8 simpleProfileData2UserDesp[17] = "Characteristic 9\0";
@@ -968,12 +968,12 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
          
         break; 
 
-/*        case SIMPLEPROFILE_CHAR_DATA2_UUID:
+        case SIMPLEPROFILE_CHAR_DATA2_UUID:
         *pLen = SIMPLEPROFILE_CHAR_DATA2_LEN;
 		 flash_get_cash(pAttr->pValue);
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_DATA2_LEN );
         break; 
-*/  
+  
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
         *pLen = 0;
@@ -1080,17 +1080,17 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
         #endif // (defined HAL_LCD) && (HAL_LCD == TRUE) 
               if(p>0)
               {   
-             // flash_Rinfo_page_clear(p);
-             // flash_Rinfo_minus_pages();
               p--;
               ble_state=1;
               start=0;
               }
               else if(p==0)
               {
-              // flash_Rinfo_page_clear(p);
-              // flash_Rinfo_minus_pages();
                 flash_Rinfo_all_clear();
+                for(int i=0;i<p1;i++)
+                {
+                  flash_Rinfo_minus_pages();
+                }
                 
               }             
             }    
@@ -1186,14 +1186,15 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
           if(pValue[0]==ble_count)
           {
             uint8 i;
-            for(i=1;i<=9;i++)
+            uint8* temp;
+	    temp= (uint8 *)osal_mem_alloc(9);
+	    osal_memset(temp,0,9);
+            for(i=0;i<9;i++)
             {
-              pValue[i-1]=pValue[i];
+              temp[i]=pValue[i+1];
             } 
-            flash_Tinfo_short_write(pValue,9);
-           
-            
-          //  flash_Tinfo_Length_set(9*ble_count);
+            flash_Tinfo_short_write(temp,9);
+            osal_mem_free(temp);
 	   //写入数据成功
 	/*   #if (defined HAL_LCD) && (HAL_LCD == TRUE)
       		HalLcdWriteString( "WriteInSuccessful",HAL_LCD_LINE_3);
