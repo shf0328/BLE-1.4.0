@@ -31,7 +31,7 @@
  * CONSTANTS
  */
 
-#define SERVAPP_NUM_ATTR_SUPPORTED        29
+#define SERVAPP_NUM_ATTR_SUPPORTED        32
 
 /*********************************************************************
  * TYPEDEFS
@@ -104,6 +104,12 @@ CONST uint8 simpleProfileData2UUID[ATT_BT_UUID_SIZE] =
   LO_UINT16(SIMPLEPROFILE_CHAR_DATA2_UUID), HI_UINT16(SIMPLEPROFILE_CHAR_DATA2_UUID)
 };
 
+// Characteristic 10 UUID: 0xFFFA
+CONST uint8 simpleProfileIDCardUUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(SIMPLEPROFILE_CHAR_IDCARD_UUID), HI_UINT16(SIMPLEPROFILE_CHAR_IDCARD_UUID)
+};
+
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -122,7 +128,6 @@ uint8 ble_count=1;
 uint8 ble_state=1;
 uint8 app_notif=0;
 uint8 p=0;  //当前页码
-uint8 flag=10;
 uint8 leng=0;  //当前读的页的数据长度      
 uint8 j=0;    //当前读的页的数据包数
 uint8 re=0;
@@ -230,6 +235,14 @@ static uint8 simpleProfileData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0};
 // Simple Profile Characteristic 9 User Description
 static uint8 simpleProfileData2UserDesp[17] = "Characteristic 9\0";
 
+// Simple Profile Characteristic 10 IDCARD Properties
+static uint8 simpleProfileIDCardProps = GATT_PROP_READ | GATT_PROP_WRITE;
+
+// Characteristic 10 Value
+static uint8 simpleProfileIDCard[SIMPLEPROFILE_CHAR_IDCARD_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+// Simple Profile Characteristic 10 User Description
+static uint8 simpleProfileIDCardUserDesp[18] = "Characteristic 10\0";
 
 
 /*********************************************************************
@@ -473,7 +486,29 @@ static gattAttribute_t simpleProfileAttrTbl[SERVAPP_NUM_ATTR_SUPPORTED] =
         0, 
         simpleProfileData2UserDesp 
       },
-	
+	// Characteristic 10 Declaration
+	{ 
+	 { ATT_BT_UUID_SIZE, characterUUID },
+        GATT_PERMIT_READ, 
+       0,
+        &simpleProfileIDCardProps 
+       },
+ 
+      // Characteristic Value 10
+      { 
+        { ATT_BT_UUID_SIZE, simpleProfileIDCardUUID },
+        GATT_PERMIT_READ | GATT_PERMIT_WRITE,
+        0, 
+        simpleProfileIDCard 
+      },
+
+      // Characteristic 10 User Description
+      { 
+        { ATT_BT_UUID_SIZE, charUserDescUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        simpleProfileIDCardUserDesp 
+      },	
 
 };
 
@@ -685,7 +720,18 @@ bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value )
         ret = bleInvalidRange;
       }
       break;
-	
+      
+        case SIMPLEPROFILE_CHAR_IDCARD:
+      if ( len == SIMPLEPROFILE_CHAR_IDCARD_LEN ) 
+      {
+        VOID osal_memcpy( simpleProfileIDCard, value, SIMPLEPROFILE_CHAR_IDCARD_LEN );
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;	
+      
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -749,6 +795,9 @@ bStatus_t SimpleProfile_GetParameter( uint8 param, void *value )
       VOID osal_memcpy( value, simpleProfileData2, SIMPLEPROFILE_CHAR_DATA2_LEN );
       break;
 
+    case SIMPLEPROFILE_CHAR_IDCARD:
+      VOID osal_memcpy( value, simpleProfileIDCard, SIMPLEPROFILE_CHAR_IDCARD_LEN );
+      break;      
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -793,21 +842,21 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
   {
     // 16-bit UUID
     uint16 uuid = BUILD_UINT16( pAttr->type.uuid[0], pAttr->type.uuid[1]);
-/*    uint8 leng=0;  //当前读的页的数据长度      
+    uint8 leng=0;  //当前读的页的数据长度      
     uint8 j=0;    //当前读的页的数据包数
-    uint8 re=0;*/
-    if(p!=flag) //p为当前页
+    uint8 re=0;
+    if(p>=0) //p为当前页
     {
     re=flash_Rinfo_single_read(0x94+p,1);
     if(re!=0)
     {
       leng=re;
- //     HalLcdWriteStringValue( "3 VALUE = ", leng, 10, HAL_LCD_LINE_8 );
+      HalLcdWriteStringValue( "3 VALUE = ", leng, 10, HAL_LCD_LINE_8 );
     }
+    else {leng=0;}
     if(leng%9!=0)
     {j=(leng/9)+1;}
     else {j=leng/9;}
-    flag=p;
     }
     
      if(identity == 1)
@@ -973,6 +1022,12 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
 		 flash_get_cash(pAttr->pValue);
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_DATA2_LEN );
         break; 
+
+/*        case SIMPLEPROFILE_CHAR_IDCARD:
+        *pLen = SIMPLEPROFILE_CHAR_IDCARD;
+		 flash_get_cash(pAttr->pValue);
+        VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_IDCARD_LEN );
+        break; */
   
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
@@ -1086,12 +1141,12 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
               }
               else if(p==0)
               {
-                flash_Rinfo_all_clear();
+               flash_Rinfo_all_clear();
                 for(int i=0;i<p1;i++)
                 {
                   flash_Rinfo_minus_pages();
                 }
-                
+                leng=0;
               }             
             }    
           }
@@ -1238,6 +1293,32 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
              
         break;
 	*/ 
+        
+/*	case SIMPLEPROFILE_CHAR_IDCARD_UUID:
+
+        //Validate the value
+        // Make sure it's not a blob oper
+        if ( offset == 0 )
+        {
+          if ( len != SIMPLEPROFILE_CHAR_IDCARD_LEN )
+          {
+            status = ATT_ERR_INVALID_VALUE_SIZE;
+          }
+        }
+        else
+        {
+          status = ATT_ERR_ATTR_NOT_LONG;
+        }
+        
+        //Write the value
+        if ( status == SUCCESS )
+        {
+          VOID osal_memcpy( pAttr->pValue, pValue, SIMPLEPROFILE_CHAR_IDCARD_LEN );
+          notifyApp = SIMPLEPROFILE_CHAR_IDCARD;
+        }
+             
+        break;
+	*/ 
       case GATT_CLIENT_CHAR_CFG_UUID:
         status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
                                                  offset, GATT_CLIENT_CFG_NOTIFY );
@@ -1285,6 +1366,14 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
         }
              
         break;
+      case GATT_CLIENT_CHAR_CFG_UUID:
+        status = GATTServApp_ProcessCCCWriteReq( connHandle, pAttr, pValue, len,
+                                                 offset, GATT_CLIENT_CFG_NOTIFY );
+		#if (defined HAL_LCD) && (HAL_LCD == TRUE)
+          		HalLcdWriteString( "Notifaction ON", HAL_LCD_LINE_3);
+        	#endif // (defined HAL_LCD) && (HAL_LCD == TRUE)
+		
+        break;        
 
 	 default:
         // Should never get here! (characteristics 2 and 4 do not have write permissions)
