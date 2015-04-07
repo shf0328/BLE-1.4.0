@@ -61,7 +61,7 @@
 #define SBP_PERIODIC_EVT_PERIOD                   5000
 
 // What is the advertising interval when device is discoverable (units of 625us, 160=100ms)
-#define DEFAULT_ADVERTISING_INTERVAL          160
+#define DEFAULT_ADVERTISING_INTERVAL          1600
 
 // Limited discoverable mode advertises for 30.72s, and then stops
 // General discoverable mode advertises indefinitely
@@ -73,13 +73,13 @@
 #endif  // defined ( CC2540_MINIDK )
 
 // Minimum connection interval (units of 1.25ms, 80=100ms) if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     80
+#define DEFAULT_DESIRED_MIN_CONN_INTERVAL     400
 
 // Maximum connection interval (units of 1.25ms, 800=1000ms) if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_MAX_CONN_INTERVAL     800
 
 // Slave latency to use if automatic parameter update request is enabled
-#define DEFAULT_DESIRED_SLAVE_LATENCY         0
+#define DEFAULT_DESIRED_SLAVE_LATENCY         5
 
 // Supervision timeout value (units of 10ms, 1000=10s) if automatic parameter update request is enabled
 #define DEFAULT_DESIRED_CONN_TIMEOUT          1000
@@ -305,14 +305,21 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 
   //HalLcdWriteStringValue( "key = 0x", keys, 16, HAL_LCD_LINE_3 );
   
-  if(keys& HAL_KEY_SW_6)
+  if(keys & HAL_KEY_SW_6)
   {
-    HalLcdWriteStringValue( "INTERRUPT", keys, 16, HAL_LCD_LINE_3 );
-    led_start_social();
+     osal_event_hdr_t *msgPtr;
+    msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
+    if ( msgPtr )
+    {
+      msgPtr->event=SOCIAL;
+      osal_msg_send( 12, (uint8 *)msgPtr );
+    }
+    HalLcdWriteStringValue( "key = 1x", keys, 16, HAL_LCD_LINE_3 );
+    HalLedBlink (HAL_LED_1, 5, 50, 2000);
   }
   
- /*
-  if ( keys & HAL_KEY_UP )
+ 
+/*  if ( keys & HAL_KEY_UP )
   {  
     HalLcdWriteString( "HAL_KEY_UP", HAL_LCD_LINE_5 );
     if(index<INFO_LENGTH)
@@ -322,7 +329,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     HalLcdWriteStringValue( "INDEX = ", index, 10, HAL_LCD_LINE_6 );
     //osal_changepowerstate(SAVEPOWER);
     
-  }*/
+  }
 
  /* if ( keys & HAL_KEY_LEFT )
   {
@@ -342,21 +349,33 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     uint8 temp=0;
     temp=flash_Tinfo_single_write(index,index);
   }*/
-/*
-  if ( keys & HAL_KEY_RIGHT )
+
+/*  if ( keys & HAL_KEY_RIGHT )
   {
     HalLcdWriteString( "HAL_KEY_RIGHT", HAL_LCD_LINE_5 );
     uint8 temp=0;
     temp=flash_Rinfo_single_read(0x94,index);
     //HalLcdWriteStringValue( "rcv VALUE = ", receive[seq], 10, HAL_LCD_LINE_6 );
     HalLcdWriteStringValue( "R VALUE = ", temp, 10, HAL_LCD_LINE_7 );
-  }
+  }*/
   
-  if ( keys & HAL_KEY_CENTER )
+/*  if ( keys & HAL_KEY_CENTER )
   {
     HalLcdWriteString( "HAL_KEY_CENTER", HAL_LCD_LINE_5 );
-    
-    osal_event_hdr_t *msgPtr;
+    /*seq=seq+2;
+    if(seq>0x8C)
+    {
+      seq=0x84;
+    }
+    HalLcdWriteStringValue( "seq = 0x", seq, 16, HAL_LCD_LINE_8 );
+    //osal_changepowerstate(0);
+    uint8 temp[3]={0};
+    flash_getSerialNumber(temp);
+    HalLcdWriteStringValue( "1 VALUE = ", temp[0], 10, HAL_LCD_LINE_6 );
+    HalLcdWriteStringValue( "2 VALUE = ", temp[1], 10, HAL_LCD_LINE_7 );
+    HalLcdWriteStringValue( "3 VALUE = ", temp[2], 10, HAL_LCD_LINE_8 );*/
+
+   /* osal_event_hdr_t *msgPtr;
     msgPtr = (osal_event_hdr_t *)osal_msg_allocate( sizeof(osal_event_hdr_t) );
     if ( msgPtr )
     {
@@ -366,6 +385,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
 
     
   }
+  /*
   
   if ( keys & HAL_KEY_DOWN )
   {
@@ -377,7 +397,7 @@ static void simpleBLEPeripheral_HandleKeys( uint8 shift, uint8 keys )
     
     led_start_social();
     led_info_rec();
-    led_notif(3);
+    led_notif(2);
   }*/
 }
 
@@ -431,6 +451,8 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     uint16 desired_conn_timeout = DEFAULT_DESIRED_CONN_TIMEOUT;
 
     // Set the GAP Role Parameters
+   // GAPRole_SendUpdateParam  (DEFAULT_DESIRED_MIN_CONN_INTERVAL,DEFAULT_DESIRED_MAX_CONN_INTERVAL,100, DEFAULT_DESIRED_CONN_TIMEOUT, 1);
+
     GAPRole_SetParameter( GAPROLE_ADVERT_ENABLED, sizeof( uint8 ), &initial_advertising_enable );
     GAPRole_SetParameter( GAPROLE_ADVERT_OFF_TIME, sizeof( uint16 ), &gapRole_AdvertOffTime );
 
@@ -442,6 +464,8 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     GAPRole_SetParameter( GAPROLE_MAX_CONN_INTERVAL, sizeof( uint16 ), &desired_max_interval );
     GAPRole_SetParameter( GAPROLE_SLAVE_LATENCY, sizeof( uint16 ), &desired_slave_latency );
     GAPRole_SetParameter( GAPROLE_TIMEOUT_MULTIPLIER, sizeof( uint16 ), &desired_conn_timeout );
+   // GAPRole_SendUpdateParam  (DEFAULT_DESIRED_MIN_CONN_INTERVAL, DEFAULT_DESIRED_MAX_CONN_INTERVAL,DEFAULT_DESIRED_SLAVE_LATENCY, DEFAULT_DESIRED_CONN_TIMEOUT, 1);
+
   }
 
   // Set the GAP Characteristics
@@ -541,7 +565,7 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     uint8 PwdInDevice[SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_LEN] ={ 1,1,1,1,1,1,1,1};
     uint8 charData1[SIMPLEPROFILE_CHAR_DATA1_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     uint8 charData2[SIMPLEPROFILE_CHAR_DATA2_LEN] = { 0, 0, 0, 0};
-
+    uint8 charIDCard[SIMPLEPROFILE_CHAR_IDCARD_LEN] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR1, sizeof ( uint8 ), &charValue1 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR2, sizeof ( uint8 ), &charValue2 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR3, sizeof ( uint8 ), &charValue3 );
@@ -551,7 +575,8 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_PWD_IN_DEVICE, SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_LEN, PwdInDevice );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_DATA1, SIMPLEPROFILE_CHAR_DATA1_LEN, charData1 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_DATA2, SIMPLEPROFILE_CHAR_DATA2_LEN, charData2 );
-    
+    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_IDCARD, SIMPLEPROFILE_CHAR_IDCARD_LEN, charIDCard );
+
   }
 
      // Register for all key events - This app will handle all key events
@@ -773,6 +798,7 @@ static void peripheralStateNotificationCB( gaprole_States_t newState )
         {
           uint8 adv_enabled_status = 1;
           GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8), &adv_enabled_status); // Turn on Advertising
+        //  GAPRole_SendUpdateParam (DEFAULT_DESIRED_MIN_CONN_INTERVAL, DEFAULT_DESIRED_MAX_CONN_INTERVAL,DEFAULT_DESIRED_SLAVE_LATENCY, DEFAULT_DESIRED_CONN_TIMEOUT, 1);
           first_conn_flag = 1;
         }
 #endif // PLUS_BROADCASTER
@@ -904,7 +930,11 @@ static void simpleProfileChangeCB( uint8 paramID )
 	  start = 0;
           ble_state=1;
           p1=flash_Rinfo_get_pages();
+          if(p1>0)
+          {
           p=p1-1;
+          }
+          else {p=0;}
 	//准备好读出
 	#if (defined HAL_LCD) && (HAL_LCD == TRUE)
          HalLcdWriteString( "Ready to read out...",  HAL_LCD_LINE_3 );
@@ -923,7 +953,7 @@ static void simpleProfileChangeCB( uint8 paramID )
 	notification=3;
 	SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
 	}
-		 else if(newValue ==4)
+        else if(newValue ==4)
         {
           //准备读余额
           osal_event_hdr_t *msgPtr;
@@ -933,6 +963,7 @@ static void simpleProfileChangeCB( uint8 paramID )
                msgPtr->event=READER;
                osal_msg_send( 12, (uint8 *)msgPtr );
            }      
+          
         }
       break;
 
