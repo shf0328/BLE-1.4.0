@@ -155,6 +155,7 @@ ble通知
 +10 索引号
 */
 uint8 notification= 0;
+uint8 notif[4]={0};
 
 
 static gaprole_States_t gapProfileState = GAPROLE_INIT;
@@ -506,48 +507,7 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
    flash_pwd_init();
 	flash_info_init();
      osal_changepowerstate(0);  
-/*   //flash接受区域预置
-  uint8 number[]={0,158,59,10,238,58,193,162, 94, 144,
-                 183, 11, 0, 66, 227, 247, 126, 4,
-                 172, 237, 0, 5, 115, 114, 0, 42, 99,
-                 111, 109, 46, 101, 120, 97, 109, 112, 
-                 108, 101, 46, 97, 110, 100, 114, 111,
-                 105, 100, 46, 98, 108, 117, 101, 116,
-                 111, 111, 116, 104, 108, 101, 103, 97,
-                 116, 116, 46, 73, 68, 99, 97, 114, 100, 
-                 144, 195, 99, 89, 40, 244, 207, 29, 2,
-                 0, 3, 76, 0,1, 110, 116, 0, 18, 76, 106,
-                 97, 118, 97, 47, 108, 97, 110, 103, 47, 83,
-                 116, 114, 105, 110, 103, 59, 76, 0, 1, 112, 
-                 113, 0, 126, 0, 1, 76, 0, 1, 115, 113, 0, 
-                 126, 0, 1, 120, 112, 116, 0, 6, 233, 189,
-                 144, 233, 170, 165, 116, 0, 11, 49, 53, 54,
-                 53, 50, 51, 52, 56, 52, 50, 56, 116, 0, 8, 
-                 49, 50, 48, 50, 49, 49, 49, 54}; 
-   flash_Rinfo_all_write(number,0x94); 
-   flash_Rinfo_add_pages();
-  uint8 num[]={0,161,36,51,113,254,244,
-   3,132,221,114,74,48,171,
-   233,163,31,108,172,237,0,
-   5,115,114,0,42,99,111,109,
-   46,101,120,97,109,112,108,
-   101,46,97,110,100,114,111,
-   105,100,46,98,108,117,101,
-   116,111,111,116,104,108,101,
-   103,97,116,116,46,73,68,99,97,
-   114,100,144,195,99,89,40,244,
-   207,29,2,0,3,76,0,1,110,116,
-   0,18,76,106,97,118,97,47,108,
-   97,110,103,47,83,116,114,105,
-   110,103,59,76,0,1,112,113,0,
-   126,0,1,76,0,1,115,113,0,126,
-   0,1,120,112,116,0,9,231,142,
-   139,229,164,169,228,184,186,
-   116,0,11,49,50,51,49,50,51,52,
-   53,54,55,56,116,0,8,49,50,51,52,53,54,55,56};
 
-   flash_Rinfo_all_write(num,0x95); 
-   flash_Rinfo_add_pages();*/
     
 	
   // Setup the SimpleProfile Characteristic Values
@@ -557,7 +517,7 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     uint8 charValue3 = 0;
     uint8 charValue4 = 0;
     uint8 charValue5[SIMPLEPROFILE_CHAR5_LEN] = { 1, 2, 3, 4, 5 };
-
+    uint8 charValue11[SIMPLEPROFILE_CHAR11_LEN] = { 0,0,0,0};    
   //将flash中存入的密码保存到属性表中
     uint8* charValue6= osal_mem_alloc(SIMPLEPROFILE_CHAR_PWD_SAVED_LEN);
 	flash_pwd_read(charValue6);
@@ -571,6 +531,7 @@ void SimpleBLEPeripheral_Init( uint8 task_id )
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR3, sizeof ( uint8 ), &charValue3 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof ( uint8 ), &charValue4 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR5, SIMPLEPROFILE_CHAR5_LEN, charValue5 );
+    SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR11, SIMPLEPROFILE_CHAR11_LEN, charValue11 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_PWD_SAVED, SIMPLEPROFILE_CHAR_PWD_SAVED_LEN, charValue6 );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_PWD_IN_DEVICE, SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_LEN, PwdInDevice );
     SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR_DATA1, SIMPLEPROFILE_CHAR_DATA1_LEN, charData1 );
@@ -962,9 +923,22 @@ static void simpleProfileChangeCB( uint8 paramID )
            {
                msgPtr->event=READER;
                osal_msg_send( 12, (uint8 *)msgPtr );
-           }      
-          
+           }               
         }
+        else if(newValue ==7)
+        {
+           flash_get_cash(notif);
+           SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR11, SIMPLEPROFILE_CHAR11_LEN, notif);
+           
+        }        
+        else if(newValue==6)
+        {
+          led_info_rec();
+	  notification=8;
+	  SimpleProfile_SetParameter( SIMPLEPROFILE_CHAR4, sizeof(uint8), &notification);
+
+        }
+        
       break;
 
     case SIMPLEPROFILE_CHAR3:
