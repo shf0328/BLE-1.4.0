@@ -32,6 +32,7 @@ extern "C"
 #define SIMPLEPROFILE_CHAR_PWD_IN_DEVICE      6  // RW uint8 - Profile Characteristic 7 value
 #define SIMPLEPROFILE_CHAR_DATA1                     7  // RW uint8 - Profile Characteristic 8 value
 #define SIMPLEPROFILE_CHAR_DATA2                     8  // RW uint8 - Profile Characteristic 9 value
+#define SIMPLEPROFILE_CHAR_IDCARD                         9  // RW uint8 - Profile Characteristic 10 value
 
 // Simple Profile Service UUID
 #define SIMPLEPROFILE_SERV_UUID               0xFFF0
@@ -46,6 +47,7 @@ extern "C"
 #define SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_UUID    0xFFF7
 #define SIMPLEPROFILE_CHAR_DATA1_UUID                  0xFFF8
 #define SIMPLEPROFILE_CHAR_DATA2_UUID                  0xFFF9
+#define SIMPLEPROFILE_CHAR_IDCARD_UUID                      0XFFFA 
 
 
   
@@ -58,6 +60,7 @@ extern "C"
 #define SIMPLEPROFILE_CHAR_PWD_IN_DEVICE_LEN        8  
 #define SIMPLEPROFILE_CHAR_DATA1_LEN			     10
 #define SIMPLEPROFILE_CHAR_DATA2_LEN			     10
+#define SIMPLEPROFILE_CHAR_IDCARD_LEN                             10
 /*********************************************************************
  * TYPEDEFS
  */
