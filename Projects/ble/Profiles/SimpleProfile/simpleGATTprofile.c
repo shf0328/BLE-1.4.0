@@ -31,7 +31,7 @@
  * CONSTANTS
  */
 
-#define SERVAPP_NUM_ATTR_SUPPORTED        32
+#define SERVAPP_NUM_ATTR_SUPPORTED        36
 
 /*********************************************************************
  * TYPEDEFS
@@ -110,6 +110,11 @@ CONST uint8 simpleProfileIDCardUUID[ATT_BT_UUID_SIZE] =
   LO_UINT16(SIMPLEPROFILE_CHAR_IDCARD_UUID), HI_UINT16(SIMPLEPROFILE_CHAR_IDCARD_UUID)
 };
 
+// Characteristic 11 UUID: 0xFFFB
+CONST uint8 simpleProfilechar11UUID[ATT_BT_UUID_SIZE] =
+{ 
+  LO_UINT16(SIMPLEPROFILE_CHAR11_UUID), HI_UINT16(SIMPLEPROFILE_CHAR11_UUID)
+};
 
 /*********************************************************************
  * EXTERNAL VARIABLES
@@ -244,7 +249,20 @@ static uint8 simpleProfileIDCard[SIMPLEPROFILE_CHAR_IDCARD_LEN] = { 0, 0, 0, 0, 
 // Simple Profile Characteristic 10 User Description
 static uint8 simpleProfileIDCardUserDesp[18] = "Characteristic 10\0";
 
+// Simple Profile Characteristic 11 Properties
+static uint8 simpleProfileChar11Props = GATT_PROP_NOTIFY;
 
+// Characteristic 11 Value
+static uint8 simpleProfileChar11[SIMPLEPROFILE_CHAR11_LEN] = {0,0,0,0};
+
+// Simple Profile Characteristic 11 Configuration Each client has its own
+// instantiation of the Client Characteristic Configuration. Reads of the
+// Client Characteristic Configuration only shows the configuration for
+// that client and writes only affect the configuration of that client.
+static gattCharCfg_t simpleProfileChar11Config[GATT_MAX_NUM_CONN];
+                                        
+// Simple Profile Characteristic 11 User Description
+static uint8 simpleProfileChar11UserDesp[18] = "Characteristic 11\0";
 /*********************************************************************
  * Profile Attributes - Table
  */
@@ -508,7 +526,41 @@ static gattAttribute_t simpleProfileAttrTbl[SERVAPP_NUM_ATTR_SUPPORTED] =
         GATT_PERMIT_READ, 
         0, 
         simpleProfileIDCardUserDesp 
-      },	
+      },
+
+    // Characteristic 11 Declaration
+    { 
+      { ATT_BT_UUID_SIZE, characterUUID },
+      GATT_PERMIT_READ, 
+      0,
+      &simpleProfileChar11Props 
+    },
+
+      // Characteristic Value 11
+      { 
+        { ATT_BT_UUID_SIZE, simpleProfilechar11UUID },
+        0, 
+        0, 
+        simpleProfileChar11 
+      },
+
+      // Characteristic 11 configuration
+      { 
+        { ATT_BT_UUID_SIZE, clientCharCfgUUID },
+        GATT_PERMIT_READ | GATT_PERMIT_WRITE, 
+        0, 
+        (uint8 *)simpleProfileChar11Config 
+      },
+      
+      // Characteristic 11 User Description
+      { 
+        { ATT_BT_UUID_SIZE, charUserDescUUID },
+        GATT_PERMIT_READ, 
+        0, 
+        simpleProfileChar11UserDesp 
+      },
+     
+
 
 };
 
@@ -556,6 +608,7 @@ bStatus_t SimpleProfile_AddService( uint32 services )
 
   // Initialize Client Characteristic Configuration attributes
   GATTServApp_InitCharCfg( INVALID_CONNHANDLE, simpleProfileChar4Config );
+  GATTServApp_InitCharCfg( INVALID_CONNHANDLE, simpleProfileChar11Config );
 
   // Register with Link DB to receive link status change callback
   VOID linkDB_Register( simpleProfile_HandleConnStatusCB );  
@@ -735,6 +788,22 @@ bStatus_t SimpleProfile_SetParameter( uint8 param, uint8 len, void *value )
     default:
       ret = INVALIDPARAMETER;
       break;
+      
+    case SIMPLEPROFILE_CHAR11:
+       if ( len == SIMPLEPROFILE_CHAR11_LEN ) 
+      {
+        VOID osal_memcpy( simpleProfileChar11, value, SIMPLEPROFILE_CHAR11_LEN );        
+        // See if Notification has been enabled
+        GATTServApp_ProcessCharCfg( simpleProfileChar11Config, simpleProfileChar11, FALSE,
+                                    simpleProfileAttrTbl, GATT_NUM_ATTRS( simpleProfileAttrTbl ),
+                                    INVALID_TASK_ID );
+      }
+      else
+      {
+        ret = bleInvalidRange;
+      }
+      break;
+
   }
   
   return ( ret );
@@ -798,6 +867,11 @@ bStatus_t SimpleProfile_GetParameter( uint8 param, void *value )
     case SIMPLEPROFILE_CHAR_IDCARD:
       VOID osal_memcpy( value, simpleProfileIDCard, SIMPLEPROFILE_CHAR_IDCARD_LEN );
       break;      
+    
+    case SIMPLEPROFILE_CHAR11:
+      VOID osal_memcpy( value, simpleProfileChar11, SIMPLEPROFILE_CHAR11_LEN );
+      break; 
+      
     default:
       ret = INVALIDPARAMETER;
       break;
@@ -1028,7 +1102,10 @@ static uint8 simpleProfile_ReadAttrCB( uint16 connHandle, gattAttribute_t *pAttr
 		 flash_get_cash(pAttr->pValue);
         VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR_IDCARD_LEN );
         break; */
-  
+
+        case SIMPLEPROFILE_CHAR11_UUID:
+        *pLen = SIMPLEPROFILE_CHAR11_LEN;
+        VOID osal_memcpy( pValue, pAttr->pValue, SIMPLEPROFILE_CHAR11_LEN );  
       default:
         // Should never get here! (characteristics 3 and 4 do not have read permissions)
         *pLen = 0;
@@ -1130,9 +1207,6 @@ static bStatus_t simpleProfile_WriteAttrCB( uint16 connHandle, gattAttribute_t *
             notifyApp = SIMPLEPROFILE_CHAR3;       
             if(pAttr->pValue[0]==50)
             {
-              #if (defined HAL_LCD) && (HAL_LCD == TRUE)
-         HalLcdWriteString( "TEST_TEST",  HAL_LCD_LINE_4 );
-        #endif // (defined HAL_LCD) && (HAL_LCD == TRUE) 
               if(p>0)
               {   
               p--;
@@ -1418,6 +1492,7 @@ static void simpleProfile_HandleConnStatusCB( uint16 connHandle, uint8 changeTyp
            ( !linkDB_Up( connHandle ) ) ) )
     { 
       GATTServApp_InitCharCfg( connHandle, simpleProfileChar4Config );
+      GATTServApp_InitCharCfg( connHandle, simpleProfileChar11Config );
     }
   }
 }
